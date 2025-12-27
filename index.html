@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mobility Flow</title>
+    <style>
+        :root { --bg-work: #30d158; --bg-rest: #ff453a; --bg-prepare: #000000; --text-on-color: #000; }
+        body { margin: 0; font-family: -apple-system, system-ui; background: #000; color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background-color 1s ease; }
+        body.work { background-color: var(--bg-work); color: var(--text-on-color); }
+        body.rest { background-color: var(--bg-rest); color: white; }
+        body.prepare { background-color: var(--bg-prepare); color: white; }
+        #setup, #timer { inset: 0; position: fixed; display: flex; flex-direction: column; padding: 60px 24px; box-sizing: border-box; }
+        h1 { font-size: 34px; font-weight: 800; margin-bottom: 8px; }
+        .subtitle { font-size: 18px; color: #8e8e93; margin-bottom: 40px; }
+        .summary-card { background: #1c1c1e; border-radius: 24px; padding: 24px; margin-bottom: auto; }
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #2c2c2e; }
+        #timer { display: none; align-items: center; justify-content: center; text-align: center; }
+        .phase-indicator { font-size: 14px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+        .exercise-name { font-size: 32px; font-weight: 900; min-height: 110px; display: flex; align-items: center; justify-content: center; }
+        .ring-container { position: relative; width: 260px; height: 260px; margin: 10px 0; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        circle { fill: none; stroke-width: 14; stroke-linecap: round; }
+        .bg-circle { stroke: rgba(255,255,255,0.15); }
+        .progress-circle { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 0.3s linear; }
+        .time-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 90px; font-weight: 300; }
+        .next-up-card { background: rgba(255,255,255,0.1); padding: 20px 30px; border-radius: 24px; width: 90%; margin-top: 20px; opacity: 0; transform: translateY(20px); transition: all 0.6s ease; border: 1px solid rgba(255,255,255,0.1); }
+        .next-up-card.show-next { opacity: 1; transform: translateY(0); }
+        .next-label-small { font-size: 12px; font-weight: 800; text-transform: uppercase; opacity: 0.7; display: block; }
+        .next-ex-large { font-size: 22px; font-weight: 700; display: block; }
+        @keyframes softPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .warning-pulse { animation: softPulse 0.8s ease-in-out infinite; }
+        .btn { padding: 22px; border-radius: 20px; font-size: 19px; font-weight: 700; border: none; }
+        .start-btn { background: var(--bg-work); color: #000; width: 100%; }
+        .controls { display: flex; gap: 12px; width: 95%; margin-top: 30px; }
+        .pause-btn { background: rgba(255,255,255,0.1); color: white; border: 1.5px solid rgba(255,255,255,0.3); flex: 2; }
+        .exit-btn { background: rgba(0,0,0,0.3); color: white; flex: 1; border: 1px solid rgba(255,255,255,0.1); }
+        body.work .pause-btn { background: rgba(0,0,0,0.1); color: black; border-color: rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+<div id="setup">
+    <h1>Mobility Flow</h1>
+    <p class="subtitle">13:46 Session</p>
+    <div class="summary-card">
+        <div class="stat-row"><span>Cycle 1</span><strong>Back/Thoracic</strong></div>
+        <div class="stat-row"><span>Cycle 2</span><strong>Hips/Groin</strong></div>
+        <div class="stat-row"><span>Cycle 3</span><strong>Ankle/Knee</strong></div>
+        <div class="stat-row"><span>Cycle 4</span><strong>Core</strong></div>
+    </div>
+    <button class="btn start-btn" onclick="startWorkout()">Start Workout</button>
+</div>
+<div id="timer">
+    <div id="phase" class="phase-indicator">PREPARE</div>
+    <div id="ex-title" class="exercise-name">Ready</div>
+    <div class="ring-container">
+        <svg viewBox="0 0 300 300"><circle class="bg-circle" cx="150" cy="150" r="130"></circle><circle id="prog" class="progress-circle" cx="150" cy="150" r="130"></circle></svg>
+        <div id="time" class="time-text">10</div>
+    </div>
+    <div id="next-label" class="next-up-card"><span class="next-label-small" id="next-type-text">Starting Position</span><span id="next-ex-name" class="next-ex-large"></span></div>
+    <div class="controls"><button class="btn exit-btn" onclick="exit()">Exit</button><button id="p_btn" class="btn pause-btn" onclick="toggle()">Pause</button></div>
+</div>
+<script>
+    const routine = [
+        {name:"Cycle 1", exercises:[{n:"Cat–cow",d:30},{n:"Thread needle (L)",d:15},{n:"Thread needle (R)",d:15},{n:"Pelvic tilts",d:30},{n:"Tug knee (L)",d:15},{n:"Tug knee (R)",d:15},{n:"Crossover twist (L)",d:15},{n:"Crossover twist (R)",d:15},{n:"Child to Sphinx",d:30}]},
+        {name:"Cycle 2", exercises:[{n:"Walking lunge",d:30},{n:"Cossack squat",d:30},{n:"Hip flexor (R)",d:15},{n:"Hamstring (R)",d:15},{n:"Hip flexor (L)",d:15},{n:"Hamstring (L)",d:15},{n:"Cossack hold (R)",d:15},{n:"Cossack hold (L)",d:15}]},
+        {name:"Cycle 3", exercises:[{n:"Walk the dog",d:30},{n:"Calf rocks",d:30},{n:"Squat to reach",d:30},{n:"Calf stretch (R)",d:15},{n:"Calf stretch (L)",d:15},{n:"Quad stretch (R)",d:15},{n:"Quad stretch (L)",d:15},{n:"Hamstring (R)",d:15},{n:"Hamstring (L)",d:15}]},
+        {name:"Cycle 4", exercises:[{n:"Dead bug",d:20},{n:"Super mans",d:20},{n:"Boat pose",d:20},{n:"Russian twists",d:20},{n:"Pass the ball",d:20},{n:"Sit ups",d:20}]}
+    ];
+    let currentCycle=0, currentEx=0, mode='PREPARE', time=10, total=10, interval, isPaused=false, wakeLock=null;
+    const voice=window.speechSynthesis;
+    function speak(t){voice.cancel(); let m=new SpeechSynthesisUtterance(t.toString()); m.rate=1.05; voice.speak(m);}
+    async function startWorkout(){
+        try { if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
+        document.getElementById('setup').style.display='none';
+        document.getElementById('timer').style.display='flex';
+        document.getElementById('next-ex-name').innerText=routine[0].exercises[0].n;
+        refresh(); speak("Ready? Prepare."); run();
+    }
+    function run(){
+        clearInterval(interval);
+        interval=setInterval(()=>{
+            if(isPaused) return;
+            if(mode==='WORK' && total===30 && time===15) speak("Halfway there");
+            if(time<=3 && time>0) speak(time);
+            if(time<=0){
+                if(mode==='PREPARE'||mode==='REST'){
+                    mode='WORK'; time=routine[currentCycle].exercises[currentEx].d;
+                    speak("Go. "+routine[currentCycle].exercises[currentEx].n);
+                } else {
+                    if(currentEx===routine[currentCycle].exercises.length-1){
+                        if(currentCycle===3){speak("Complete."); exit(); return;}
+                        currentCycle++; currentEx=0; mode='REST'; time=10;
+                        speak("Cycle complete. Next up: "+routine[currentCycle].exercises[currentEx].n);
+                    } else {
+                        currentEx++; mode='REST'; time=8;
+                        speak("Rest. Next: "+routine[currentCycle].exercises[currentEx].n);
+                    }
+                }
+                total=time;
+            } else { time--; }
+            refresh();
+        },1000);
+    }
+    function refresh(){
+        document.getElementById('phase').innerText=mode;
+        document.getElementById('ex-title').innerText=(mode==='WORK')?routine[currentCycle].exercises[currentEx].n:"REST";
+        document.getElementById('time').innerText=time;
+        document.body.className=mode.toLowerCase();
+        document.body.classList.toggle('warning-pulse', (mode!=='WORK' && time<=3 && time>0));
+        if(mode==='PREPARE'||mode==='REST'){
+            document.getElementById('next-ex-name').innerText=routine[currentCycle].exercises[currentEx].n;
+            document.getElementById('next-type-text').innerText=(mode==='PREPARE')?"Starting Position":"Next Position";
+            document.getElementById('next-label').classList.add('show-next');
+        } else { document.getElementById('next-label').classList.remove('show-next'); }
+        document.getElementById('prog').style.strokeDashoffset=816-(816*time)/total;
+    }
+    function toggle(){isPaused=!isPaused; document.getElementById('p_btn').innerText=isPaused?"Resume":"Pause";}
+    function exit(){clearInterval(interval); if(wakeLock) wakeLock.release(); location.reload();}
+</script>
+</body>
+</html>
