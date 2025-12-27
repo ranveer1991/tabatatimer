@@ -9,9 +9,8 @@
     <style>
         :root { --w: #30d158; --r: #ff453a; --p: #000; --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; transition: background 0.4s; }
+        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
         body.work { background: var(--w); color: #000; }
-        body.rest { background: var(--r); color: #fff; }
         
         #setup, #timer { 
             position: fixed; inset: 0; 
@@ -23,7 +22,7 @@
         .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #3a3a3c; }
         
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
-        .ex-name { font-size: 32px; font-weight: 800; line-height: 1.2; margin-top: 20px; }
+        .ex-name { font-size: 32px; font-weight: 800; line-height: 1.2; min-height: 80px; display: flex; align-items: center; justify-content: center; }
         
         .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; }
@@ -34,8 +33,7 @@
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
         .next-card { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; width: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         
-        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; transition: opacity 0.2s; }
-        .btn:active { opacity: 0.7; }
+        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; }
         .start-btn { background: var(--w); color: #000; }
         .ctrls { display: flex; gap: 12px; width: 100%; }
         .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
@@ -46,20 +44,20 @@
 
 <div id="setup">
     <h1 style="margin:0; font-size: 34px;">Mobility Flow</h1>
-    <p style="color:#8e8e93; margin-top:4px">20 Min Daily Routine</p>
+    <p style="color:#8e8e93; margin-top:4px">13:46 Session</p>
     <div class="summary-card">
         <div class="stat-row"><span>Cycle 1</span><strong>Back</strong></div>
         <div class="stat-row"><span>Cycle 2</span><strong>Hips</strong></div>
         <div class="stat-row"><span>Cycle 3</span><strong>Ankle</strong></div>
         <div class="stat-row"><span>Cycle 4</span><strong>Core</strong></div>
     </div>
-    <button class="btn start-btn" onclick="start()">Start Session</button>
+    <button class="btn start-btn" id="startBtn">Start Workout</button>
 </div>
 
 <div id="timer">
     <div>
         <div id="phase" style="font-size:12px; letter-spacing:2px; font-weight:800; opacity:0.6; text-transform:uppercase">Prepare</div>
-        <div id="ex-title" class="ex-name">Ready?</div>
+        <div id="ex-title" class="ex-name">Ready</div>
     </div>
 
     <div class="ring">
@@ -71,13 +69,13 @@
     </div>
 
     <div id="next-label" class="next-card">
-        <span style="font-size:10px; text-transform:uppercase; opacity:0.6; display:block">Next Up</span>
-        <span id="next-ex-name" style="font-size:18px; font-weight:600">-</span>
+        <span style="font-size:10px; text-transform:uppercase; opacity:0.6; display:block">Next Position</span>
+        <span id="next-ex-name" style="font-size:18px; font-weight:600"></span>
     </div>
 
     <div class="ctrls">
         <button class="btn exit-btn" onclick="location.reload()">Exit</button>
-        <button id="p_btn" class="btn pause-btn" onclick="toggle()">Pause</button>
+        <button id="p_btn" class="btn pause-btn">Pause</button>
     </div>
 </div>
 
@@ -92,16 +90,10 @@
     let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
     const synth = window.speechSynthesis;
 
-    // Fix iOS Speech: must be called once in a user gesture
-    function unlockVoice() {
-        const msg = new SpeechSynthesisUtterance('');
-        synth.speak(msg);
-    }
-
     function speak(t) {
         synth.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.rate = 1.1;
+        m.rate = 1.0;
         synth.speak(m);
     }
 
@@ -110,16 +102,13 @@
         const next = routine[currentC].exercises[currentE + 1] || (routine[currentC + 1] ? routine[currentC+1].exercises[0] : null);
         
         document.getElementById('time').innerText = time;
-        document.getElementById('ex-title').innerText = mode === 'PREP' ? 'Get Ready' : ex.n;
+        document.getElementById('ex-title').innerText = mode === 'PREP' ? 'Prepare' : ex.n;
         document.getElementById('phase').innerText = mode;
         document.getElementById('next-ex-name').innerText = next ? next.n : 'Finish';
         
-        // Circular Progress
         const offset = 816 - (816 * (time / total));
         document.getElementById('prog').style.strokeDashoffset = offset;
-        
-        // Theme
-        document.body.className = mode === 'PREP' ? '' : (mode === 'WORK' ? 'work' : 'rest');
+        document.body.className = mode === 'WORK' ? 'work' : '';
     }
 
     function tick() {
@@ -138,21 +127,18 @@
             mode = 'WORK';
             const ex = routine[currentC].exercises[currentE];
             time = total = ex.d;
-            speak("Go: " + ex.n);
+            speak(ex.n);
         } else {
             currentE++;
             if (currentE >= routine[currentC].exercises.length) {
-                currentE = 0;
-                currentC++;
+                currentE = 0; currentC++;
             }
-            
             if (currentC >= routine.length) {
                 clearInterval(interval);
                 speak("Workout Complete");
                 location.reload();
                 return;
             }
-            
             mode = 'PREP';
             time = total = 5;
             speak("Next: " + routine[currentC].exercises[currentE].n);
@@ -160,21 +146,24 @@
         updateUI();
     }
 
-    function start() {
-        unlockVoice();
-        // Request Wake Lock if supported
-        if ('keepAwake' in screen) screen.keepAwake = true; 
+    // iOS Safari requires explicit event listeners rather than inline onclick for complex triggers
+    document.getElementById('startBtn').addEventListener('click', function() {
+        // Unlock audio context
+        const m = new SpeechSynthesisUtterance('');
+        synth.speak(m);
+        
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
+        
         updateUI();
         interval = setInterval(tick, 1000);
-        speak("Starting in 10 seconds");
-    }
+        speak("Starting Workout");
+    });
 
-    function toggle() {
+    document.getElementById('p_btn').addEventListener('click', function() {
         paused = !paused;
-        document.getElementById('p_btn').innerText = paused ? 'Resume' : 'Pause';
-    }
+        this.innerText = paused ? 'Resume' : 'Pause';
+    });
 </script>
 </body>
 </html>
