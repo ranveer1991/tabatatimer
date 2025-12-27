@@ -4,61 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Mobility Flow</title>
     <style>
-        :root { --bg-work: #30d158; --bg-rest: #ff453a; --bg-prepare: #000; }
-        body { margin: 0; font-family: -apple-system, system-ui; background: #000; color: #fff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; transition: background-color 0.8s ease; }
-        body.work { background-color: var(--bg-work); color: #000; }
-        body.rest { background-color: var(--bg-rest); color: #fff; }
-        body.prepare { background-color: var(--bg-prepare); color: #fff; }
-        #setup, #timer { inset: 0; position: fixed; display: flex; flex-direction: column; padding: 60px 24px; box-sizing: border-box; }
-        .summary-card { background: #1c1c1e; border-radius: 24px; padding: 20px; margin-bottom: 20px; }
-        .stat-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid #2c2c2e; font-size: 15px; }
-        #timer { display: none; align-items: center; justify-content: center; text-align: center; }
-        .exercise-name { font-size: 32px; font-weight: 900; min-height: 100px; display: flex; align-items: center; justify-content: center; line-height: 1.1; }
-        .time-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 90px; font-weight: 200; font-variant-numeric: tabular-nums; }
-        .ring-container { position: relative; width: 260px; height: 260px; margin: 20px 0; }
-        svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        circle { fill: none; stroke-width: 12; stroke-linecap: round; }
-        .bg-circle { stroke: rgba(255,255,255,0.1); }
-        .progress-circle { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 0.3s linear; }
-        .next-up-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 20px; width: 90%; opacity: 0; transition: 0.5s; border: 1px solid rgba(255,255,255,0.1); }
-        .next-up-card.show-next { opacity: 1; }
-        .btn { padding: 20px; border-radius: 18px; font-size: 18px; font-weight: 700; border: none; cursor: pointer; }
-        .start-btn { background: var(--bg-work); color: #000; width: 100%; margin-bottom: 12px; }
-        .test-btn { background: #2c2c2e; color: #fff; width: 100%; font-size: 14px; padding: 12px; }
-        .controls { display: flex; gap: 10px; width: 100%; margin-top: 20px; }
-        .pause-btn { background: rgba(255,255,255,0.1); color: #fff; flex: 2; border: 1px solid rgba(255,255,255,0.2); }
-        .exit-btn { background: rgba(255,255,255,0.05); color: #fff; flex: 1; }
+        :root { --w: #30d158; --r: #ff453a; --p: #000; --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; transition: background 0.4s; }
+        body.work { background: var(--w); color: #000; }
+        body.rest { background: var(--r); color: #fff; }
+        
+        #setup, #timer { 
+            position: fixed; inset: 0; 
+            padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px);
+            display: flex; flex-direction: column; 
+        }
+        
+        .summary-card { background: #1c1c1e; border-radius: 20px; padding: 16px; margin: 20px 0; }
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #3a3a3c; }
+        
+        #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
+        .ex-name { font-size: 32px; font-weight: 800; line-height: 1.2; margin-top: 20px; }
+        
+        .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
+        svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; }
+        circle { fill: none; stroke-width: 10; stroke-linecap: round; }
+        .bg-c { stroke: rgba(255,255,255,0.1); }
+        .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
+        
+        .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
+        .next-card { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; width: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        
+        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; transition: opacity 0.2s; }
+        .btn:active { opacity: 0.7; }
+        .start-btn { background: var(--w); color: #000; }
+        .ctrls { display: flex; gap: 12px; width: 100%; }
+        .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
+        .exit-btn { background: rgba(0,0,0,0.2); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.2); }
     </style>
 </head>
-<body class="prepare">
+<body>
 
 <div id="setup">
-    <h1 style="margin:0">Mobility Flow</h1>
-    <p style="color:#8e8e93; margin-bottom:30px">13:46 Session</p>
+    <h1 style="margin:0; font-size: 34px;">Mobility Flow</h1>
+    <p style="color:#8e8e93; margin-top:4px">20 Min Daily Routine</p>
     <div class="summary-card">
         <div class="stat-row"><span>Cycle 1</span><strong>Back</strong></div>
         <div class="stat-row"><span>Cycle 2</span><strong>Hips</strong></div>
         <div class="stat-row"><span>Cycle 3</span><strong>Ankle</strong></div>
         <div class="stat-row"><span>Cycle 4</span><strong>Core</strong></div>
     </div>
-    <button class="btn start-btn" onclick="startWorkout()">Start Workout</button>
-    <button class="btn test-btn" onclick="testVoice()">🔊 Test Audio Connection</button>
+    <button class="btn start-btn" onclick="start()">Start Session</button>
 </div>
 
 <div id="timer">
-    <div id="phase" style="font-size:14px; letter-spacing:2px; font-weight:800; opacity:0.6">PREPARE</div>
-    <div id="ex-title" class="exercise-name">Ready</div>
-    <div class="ring-container">
-        <svg viewBox="0 0 300 300"><circle class="bg-circle" cx="150" cy="150" r="130"></circle><circle id="prog" class="progress-circle" cx="150" cy="150" r="130"></circle></svg>
-        <div id="time" class="time-text">10</div>
+    <div>
+        <div id="phase" style="font-size:12px; letter-spacing:2px; font-weight:800; opacity:0.6; text-transform:uppercase">Prepare</div>
+        <div id="ex-title" class="ex-name">Ready?</div>
     </div>
-    <div id="next-label" class="next-up-card">
-        <span style="font-size:11px; text-transform:uppercase; opacity:0.6; display:block" id="next-type">Next Position</span>
-        <span id="next-ex-name" style="font-size:20px; font-weight:700"></span>
+
+    <div class="ring">
+        <svg viewBox="0 0 300 300">
+            <circle class="bg-c" cx="150" cy="150" r="130"></circle>
+            <circle id="prog" class="prog-c" cx="150" cy="150" r="130"></circle>
+        </svg>
+        <div id="time" class="time">10</div>
     </div>
-    <div class="controls">
+
+    <div id="next-label" class="next-card">
+        <span style="font-size:10px; text-transform:uppercase; opacity:0.6; display:block">Next Up</span>
+        <span id="next-ex-name" style="font-size:18px; font-weight:600">-</span>
+    </div>
+
+    <div class="ctrls">
         <button class="btn exit-btn" onclick="location.reload()">Exit</button>
         <button id="p_btn" class="btn pause-btn" onclick="toggle()">Pause</button>
     </div>
@@ -66,17 +83,98 @@
 
 <script>
     const routine = [
-        {name:"C1", exercises:[{n:"Cat–cow",d:30},{n:"Thread needle (L)",d:15},{n:"Thread needle (R)",d:15},{n:"Pelvic tilts",d:30},{n:"Tug knee (L)",d:15},{n:"Tug knee (R)",d:15},{n:"Crossover twist (L)",d:15},{n:"Crossover twist (R)",d:15},{n:"Child to Sphinx",d:30}]},
-        {name:"C2", exercises:[{n:"Walking lunge",d:30},{n:"Cossack squat",d:30},{n:"Hip flexor (R)",d:15},{n:"Hamstring (R)",d:15},{n:"Hip flexor (L)",d:15},{n:"Hamstring (L)",d:15},{n:"Cossack hold (R)",d:15},{n:"Cossack hold (L)",d:15}]},
-        {name:"C3", exercises:[{n:"Walk the dog",d:30},{n:"Calf rocks",d:30},{n:"Squat to reach",d:30},{n:"Calf stretch (R)",d:15},{n:"Calf stretch (L)",d:15},{n:"Quad stretch (R)",d:15},{n:"Quad stretch (L)",d:15},{n:"Hamstring (R)",d:15},{n:"Hamstring (L)",d:15}]},
-        {name:"C4", exercises:[{n:"Dead bug",d:20},{n:"Super mans",d:20},{n:"Boat pose",d:20},{n:"Russian twists",d:20},{n:"Pass the ball",d:20},{n:"Sit ups",d:20}]}
+        {exercises:[{n:"Cat–cow",d:30},{n:"Thread needle (L)",d:15},{n:"Thread needle (R)",d:15},{n:"Pelvic tilts",d:30},{n:"Tug knee (L)",d:15},{n:"Tug knee (R)",d:15},{n:"Crossover twist (L)",d:15},{n:"Crossover twist (R)",d:15},{n:"Child to Sphinx",d:30}]},
+        {exercises:[{n:"Walking lunge",d:30},{n:"Cossack squat",d:30},{n:"Hip flexor (R)",d:15},{n:"Hamstring (R)",d:15},{n:"Hip flexor (L)",d:15},{n:"Hamstring (L)",d:15},{n:"Cossack hold (R)",d:15},{n:"Cossack hold (L)",d:15}]},
+        {exercises:[{n:"Walk the dog",d:30},{n:"Calf rocks",d:30},{n:"Squat to reach",d:30},{n:"Calf stretch (R)",d:15},{n:"Calf stretch (L)",d:15},{n:"Quad stretch (R)",d:15},{n:"Quad stretch (L)",d:15},{n:"Hamstring (R)",d:15},{n:"Hamstring (L)",d:15}]},
+        {exercises:[{n:"Dead bug",d:20},{n:"Super mans",d:20},{n:"Boat pose",d:20},{n:"Russian twists",d:20},{n:"Pass the ball",d:20},{n:"Sit ups",d:20}]}
     ];
 
-    let currentCycle=0, currentEx=0, mode='PREPARE', time=10, total=10, interval, isPaused=false, voiceUnlocked=false;
+    let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
     const synth = window.speechSynthesis;
 
+    // Fix iOS Speech: must be called once in a user gesture
+    function unlockVoice() {
+        const msg = new SpeechSynthesisUtterance('');
+        synth.speak(msg);
+    }
+
     function speak(t) {
-        if (!t) return;
         synth.cancel();
-        const msg = new SpeechSynthesisUtterance(t.toString());
-        msg.rate = 1
+        const m = new SpeechSynthesisUtterance(t);
+        m.rate = 1.1;
+        synth.speak(m);
+    }
+
+    function updateUI() {
+        const ex = routine[currentC].exercises[currentE];
+        const next = routine[currentC].exercises[currentE + 1] || (routine[currentC + 1] ? routine[currentC+1].exercises[0] : null);
+        
+        document.getElementById('time').innerText = time;
+        document.getElementById('ex-title').innerText = mode === 'PREP' ? 'Get Ready' : ex.n;
+        document.getElementById('phase').innerText = mode;
+        document.getElementById('next-ex-name').innerText = next ? next.n : 'Finish';
+        
+        // Circular Progress
+        const offset = 816 - (816 * (time / total));
+        document.getElementById('prog').style.strokeDashoffset = offset;
+        
+        // Theme
+        document.body.className = mode === 'PREP' ? '' : (mode === 'WORK' ? 'work' : 'rest');
+    }
+
+    function tick() {
+        if (paused) return;
+        if (time > 0) {
+            time--;
+            if (time <= 3 && time > 0) speak(time);
+            updateUI();
+        } else {
+            nextStep();
+        }
+    }
+
+    function nextStep() {
+        if (mode === 'PREP') {
+            mode = 'WORK';
+            const ex = routine[currentC].exercises[currentE];
+            time = total = ex.d;
+            speak("Go: " + ex.n);
+        } else {
+            currentE++;
+            if (currentE >= routine[currentC].exercises.length) {
+                currentE = 0;
+                currentC++;
+            }
+            
+            if (currentC >= routine.length) {
+                clearInterval(interval);
+                speak("Workout Complete");
+                location.reload();
+                return;
+            }
+            
+            mode = 'PREP';
+            time = total = 5;
+            speak("Next: " + routine[currentC].exercises[currentE].n);
+        }
+        updateUI();
+    }
+
+    function start() {
+        unlockVoice();
+        // Request Wake Lock if supported
+        if ('keepAwake' in screen) screen.keepAwake = true; 
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('timer').style.display = 'flex';
+        updateUI();
+        interval = setInterval(tick, 1000);
+        speak("Starting in 10 seconds");
+    }
+
+    function toggle() {
+        paused = !paused;
+        document.getElementById('p_btn').innerText = paused ? 'Resume' : 'Pause';
+    }
+</script>
+</body>
+</html>
