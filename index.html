@@ -7,10 +7,20 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Mobility Flow</title>
     <style>
-        :root { --w: #30d158; --r: #ff453a; --p: #000; --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
+        :root { 
+            --w: #30d158; /* Green */
+            --a: #ff9f0a; /* Amber/Orange for Prep */
+            --r: #ff453a; 
+            --p: #000; 
+            --safe-top: env(safe-area-inset-top); 
+            --safe-bottom: env(safe-area-inset-bottom); 
+        }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
+        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s, color 0.4s; }
+        
+        /* State-based backgrounds */
         body.work { background: var(--w); color: #000; }
+        body.prep { background: var(--a); color: #000; }
         
         #setup, #timer { 
             position: fixed; inset: 0; 
@@ -27,17 +37,22 @@
         .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; }
         circle { fill: none; stroke-width: 10; stroke-linecap: round; }
-        .bg-c { stroke: rgba(255,255,255,0.1); }
+        .bg-c { stroke: rgba(0,0,0,0.1); }
         .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
         
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
         .next-card { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; width: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         
+        /* Dark text for light backgrounds (Prep/Work) */
+        .work .next-card, .prep .next-card { background: rgba(0,0,0,0.1); }
+
         .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; }
         .start-btn { background: var(--w); color: #000; }
         .ctrls { display: flex; gap: 12px; width: 100%; }
         .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
+        .work .pause-btn, .prep .pause-btn { background: rgba(0,0,0,0.1); color: #000; border: 1px solid rgba(0,0,0,0.1); }
         .exit-btn { background: rgba(0,0,0,0.2); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.2); }
+        .work .exit-btn, .prep .exit-btn { color: #000; border-color: rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
@@ -58,6 +73,7 @@
     <div>
         <div id="phase" style="font-size:12px; letter-spacing:2px; font-weight:800; opacity:0.6; text-transform:uppercase">Prepare</div>
         <div id="ex-title" class="ex-name">Ready</div>
+        <div id="cycle-step" style="font-size:12px; font-weight:600; opacity:0.5;">Cycle 1/4</div>
     </div>
 
     <div class="ring">
@@ -69,7 +85,7 @@
     </div>
 
     <div id="next-label" class="next-card">
-        <span style="font-size:10px; text-transform:uppercase; opacity:0.6; display:block">Next Position</span>
+        <span id="next-label-text" style="font-size:10px; text-transform:uppercase; opacity:0.6; display:block">Next Position</span>
         <span id="next-ex-name" style="font-size:18px; font-weight:600"></span>
     </div>
 
@@ -81,10 +97,10 @@
 
 <script>
     const routine = [
-        {exercises:[{n:"Cat–cow",d:30},{n:"Thread needle (L)",d:15},{n:"Thread needle (R)",d:15},{n:"Pelvic tilts",d:30},{n:"Tug knee (L)",d:15},{n:"Tug knee (R)",d:15},{n:"Crossover twist (L)",d:15},{n:"Crossover twist (R)",d:15},{n:"Child to Sphinx",d:30}]},
-        {exercises:[{n:"Walking lunge",d:30},{n:"Cossack squat",d:30},{n:"Hip flexor (R)",d:15},{n:"Hamstring (R)",d:15},{n:"Hip flexor (L)",d:15},{n:"Hamstring (L)",d:15},{n:"Cossack hold (R)",d:15},{n:"Cossack hold (L)",d:15}]},
-        {exercises:[{n:"Walk the dog",d:30},{n:"Calf rocks",d:30},{n:"Squat to reach",d:30},{n:"Calf stretch (R)",d:15},{n:"Calf stretch (L)",d:15},{n:"Quad stretch (R)",d:15},{n:"Quad stretch (L)",d:15},{n:"Hamstring (R)",d:15},{n:"Hamstring (L)",d:15}]},
-        {exercises:[{n:"Dead bug",d:20},{n:"Super mans",d:20},{n:"Boat pose",d:20},{n:"Russian twists",d:20},{n:"Pass the ball",d:20},{n:"Sit ups",d:20}]}
+        {name: "Back", exercises:[{n:"Cat–cow",d:30},{n:"Thread needle (L)",d:15},{n:"Thread needle (R)",d:15},{n:"Pelvic tilts",d:30},{n:"Tug knee (L)",d:15},{n:"Tug knee (R)",d:15},{n:"Crossover twist (L)",d:15},{n:"Crossover twist (R)",d:15},{n:"Child to Sphinx",d:30}]},
+        {name: "Hips", exercises:[{n:"Walking lunge",d:30},{n:"Cossack squat",d:30},{n:"Hip flexor (R)",d:15},{n:"Hamstring (R)",d:15},{n:"Hip flexor (L)",d:15},{n:"Hamstring (L)",d:15},{n:"Cossack hold (R)",d:15},{n:"Cossack hold (L)",d:15}]},
+        {name: "Ankle", exercises:[{n:"Walk the dog",d:30},{n:"Calf rocks",d:30},{n:"Squat to reach",d:30},{n:"Calf stretch (R)",d:15},{n:"Calf stretch (L)",d:15},{n:"Quad stretch (R)",d:15},{n:"Quad stretch (L)",d:15},{n:"Hamstring (R)",d:15},{n:"Hamstring (L)",d:15}]},
+        {name: "Core", exercises:[{n:"Dead bug",d:20},{n:"Super mans",d:20},{n:"Boat pose",d:20},{n:"Russian twists",d:20},{n:"Pass the ball",d:20},{n:"Sit ups",d:20}]}
     ];
 
     let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
@@ -93,7 +109,7 @@
     function speak(t) {
         synth.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.rate = 1.0;
+        m.rate = 1.1;
         synth.speak(m);
     }
 
@@ -102,13 +118,25 @@
         const next = routine[currentC].exercises[currentE + 1] || (routine[currentC + 1] ? routine[currentC+1].exercises[0] : null);
         
         document.getElementById('time').innerText = time;
-        document.getElementById('ex-title').innerText = mode === 'PREP' ? 'Prepare' : ex.n;
-        document.getElementById('phase').innerText = mode;
-        document.getElementById('next-ex-name').innerText = next ? next.n : 'Finish';
+        document.getElementById('ex-title').innerText = ex.n;
+        document.getElementById('phase').innerText = mode === 'PREP' ? 'Prepare' : 'Go';
+        document.getElementById('cycle-step').innerText = `Cycle ${currentC + 1}/4: ${routine[currentC].name}`;
         
+        // Show what's coming after the current action
+        document.getElementById('next-ex-name').innerText = next ? next.n : 'Finish';
+        document.getElementById('next-label-text').innerText = mode === 'PREP' ? 'Then...' : 'Next Position';
+
         const offset = 816 - (816 * (time / total));
         document.getElementById('prog').style.strokeDashoffset = offset;
-        document.body.className = mode === 'WORK' ? 'work' : '';
+        
+        // Background color logic
+        if (mode === 'WORK') {
+            document.body.className = 'work';
+        } else if (mode === 'PREP') {
+            document.body.className = 'prep';
+        } else {
+            document.body.className = '';
+        }
     }
 
     function tick() {
@@ -131,33 +159,36 @@
         } else {
             currentE++;
             if (currentE >= routine[currentC].exercises.length) {
-                currentE = 0; currentC++;
+                currentE = 0; 
+                currentC++;
             }
+            
             if (currentC >= routine.length) {
                 clearInterval(interval);
                 speak("Workout Complete");
-                location.reload();
+                setTimeout(() => location.reload(), 2000);
                 return;
             }
+            
             mode = 'PREP';
-            time = total = 5;
-            speak("Next: " + routine[currentC].exercises[currentE].n);
+            time = total = 8; // 8 seconds to switch positions
+            speak("Next up: " + routine[currentC].exercises[currentE].n);
         }
         updateUI();
     }
 
-    // iOS Safari requires explicit event listeners rather than inline onclick for complex triggers
     document.getElementById('startBtn').addEventListener('click', function() {
-        // Unlock audio context
         const m = new SpeechSynthesisUtterance('');
         synth.speak(m);
         
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
         
+        mode = 'PREP';
+        time = total = 10;
         updateUI();
         interval = setInterval(tick, 1000);
-        speak("Starting Workout");
+        speak("Starting with " + routine[0].exercises[0].n);
     });
 
     document.getElementById('p_btn').addEventListener('click', function() {
