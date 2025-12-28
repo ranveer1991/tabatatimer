@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Mobility Flow AI</title>
+    <title>Mobility Flow AI Debugger</title>
     <style>
-        :root { 
-            --w: #30d158; --a: #ff9f0a; --p: #000; 
-            --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); 
-        }
+        :root { --w: #30d158; --a: #ff9f0a; --p: #000; --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
         
@@ -27,7 +22,6 @@
             font-size: 14px; font-style: italic; line-height: 1.4; margin-top: 10px;
             display: none; backdrop-filter: blur(5px);
         }
-        .work .ai-bubble, .prep .ai-bubble { background: rgba(0, 0, 0, 0.05); color: #000; border: 1px solid rgba(0,0,0,0.1); }
 
         .ex-name { font-size: 32px; font-weight: 800; line-height: 1.2; min-height: 80px; display: flex; align-items: center; justify-content: center; }
         .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
@@ -37,16 +31,13 @@
         .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
         
-        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; }
+        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; margin-bottom: 8px; }
         .start-btn { background: var(--w); color: #000; }
-        .ctrls { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        .row-ctrls { display: flex; gap: 12px; }
-        .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
-        .skip-btn { background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.1); }
+        .test-btn { background: #3a3a3c; color: #fff; font-size: 14px; padding: 12px; }
         
-        #api-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 40px 24px; flex-direction: column; gap: 20px; justify-content: center; }
+        #api-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 40px 24px; flex-direction: column; gap: 15px; justify-content: center; }
         .settings-btn { position: absolute; top: calc(var(--safe-top) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; z-index: 10; cursor: pointer; }
-        input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 18px; border-radius: 12px; font-size: 16px; }
+        input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 18px; border-radius: 12px; font-size: 16px; width: 100%; }
     </style>
 </head>
 <body>
@@ -54,16 +45,17 @@
 <button id="gearIcon" class="settings-btn" onclick="toggleSettings()">⚙️</button>
 
 <div id="api-modal">
-    <h2 style="margin:0">AI Coach Setup</h2>
-    <p style="color: #8e8e93; font-size: 14px;">Running on <b>Gemini 3 Flash</b>. Enter your API key below.</p>
-    <input type="password" id="apiKeyInput" placeholder="Paste Key Here...">
-    <button class="btn start-btn" onclick="saveKey()">Save & Continue</button>
+    <h2 style="margin:0">Coach Settings</h2>
+    <p style="color: #8e8e93; font-size: 14px; margin-bottom: 10px;">Using Model: <b>Gemini 3 Flash</b></p>
+    <input type="password" id="apiKeyInput" placeholder="Paste API Key Here...">
+    <button class="btn test-btn" onclick="testConnection()">⚡ Test Connection</button>
+    <button class="btn start-btn" onclick="saveKey()">Save & Close</button>
     <button class="btn" style="background:transparent; color:#fff;" onclick="toggleSettings()">Cancel</button>
 </div>
 
 <div id="setup">
     <h1 style="margin:0; font-size: 34px;">Mobility Flow</h1>
-    <p id="current-day-label" style="color:#8e8e93; margin-top:4px">Ready to reset?</p>
+    <p id="current-day-label" style="color:#8e8e93; margin-top:4px">Debug Mode Active</p>
     <div class="summary-card">
         <div class="stat-row"><span>Cycle 1</span><strong>Back</strong></div>
         <div class="stat-row"><span>Cycle 2</span><strong>Hips</strong></div>
@@ -87,9 +79,9 @@
         <div id="time" class="time">10</div>
     </div>
     <div class="ctrls">
-        <div class="row-ctrls">
-            <button id="p_btn" class="btn pause-btn">Pause</button>
-            <button id="skip_btn" class="btn skip-btn">Skip</button>
+        <div class="row-ctrls" style="display:flex; gap:10px; width:100%;">
+            <button id="p_btn" class="btn" style="background:rgba(255,255,255,0.2); color:#fff; flex:2;">Pause</button>
+            <button id="skip_btn" class="btn" style="background:rgba(255,255,255,0.1); color:#fff; flex:1;">Skip</button>
         </div>
         <button class="btn" style="background:transparent; color:#8e8e93; font-size:14px;" onclick="location.reload()">End Workout</button>
     </div>
@@ -97,19 +89,8 @@
 
 <script>
     const routine = [
-        {name: "Back", exercises:[
-            {n:"Cat-Cow",d:30, t:"Move like a wave, one vertebrae at a time."},
-            {n:"Child to Sphinx",d:30, t:"Slink forward and peel your chest up."},
-            {n:"Pelvic Tilts",d:30, t:"Just the pelvis, keep the legs quiet."},
-            {n:"Thread Needle (L)",d:15, t:"Reach deep, like grabbing a lost remote."},
-            {n:"Thread Needle (R)",d:15, t:"Hips square, twist through the ribs."}
-        ]},
-        {name: "Hips", exercises:[
-            {n:"Walking Lunge",d:30, t:"Tall spine, unzip your back hip hip."},
-            {n:"Cossack Squat",d:30, t:"Heels down, glide side to side."},
-            {n:"Hip Flexor (L)",d:15, t:"Squeeze your left glute to open up."},
-            {n:"Hip Flexor (R)",d:15, t:"Don't arch your back, stay tall."}
-        ]}
+        {name: "Back", exercises:[{n:"Cat-Cow",d:30, t:"Wave-like movement."},{n:"Sphinx",d:30, t:"Chest high."}]},
+        {name: "Hips", exercises:[{n:"Lunge",d:30, t:"Tall spine."},{n:"Cossack",d:30, t:"Heels down."}]}
     ];
 
     let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
@@ -120,16 +101,59 @@
         if (!text) return;
         synth.cancel();
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 1.1; msg.pitch = 1.0;
+        msg.rate = 1.0; 
         synth.speak(msg);
+    }
+
+    // DEBUG: Log routine data on load
+    console.log("--- WORKOUT ROUTINE LOADED ---");
+    console.table(routine.map(c => ({Cycle: c.name, Exercises: c.exercises.length})));
+
+    async function testConnection() {
+        const key = document.getElementById('apiKeyInput').value.trim();
+        if (!key) { alert("Please enter a key first!"); return; }
+        
+        console.log("Testing Gemini API with key: " + key.substring(0,5) + "...");
+        const btn = document.querySelector('.test-btn');
+        btn.innerText = "⏳ Calling Google...";
+        
+        const testPrompt = "Say 'The coach is connected' in a peppy way.";
+        
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${key}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: testPrompt }]}] })
+            });
+
+            console.log("Response Status:", res.status);
+            const data = await res.json();
+            console.log("Response Body:", data);
+
+            if (data.candidates && data.candidates[0].content) {
+                const text = data.candidates[0].content.parts[0].text;
+                alert("SUCCESS! AI says: " + text);
+                speak(text);
+            } else if (data.error) {
+                alert("API ERROR: " + data.error.message);
+                console.error(data.error);
+            } else {
+                alert("API returned no content. Check console for details.");
+            }
+        } catch (e) {
+            alert("CONNECTION FAILED: Check your internet or API key.");
+            console.error(e);
+        } finally {
+            btn.innerText = "⚡ Test Connection";
+        }
     }
 
     async function fetchAiAdvice() {
         const key = localStorage.getItem('GEMINI_KEY');
-        if (!key) return "Welcome. Let's move with focus today.";
-
+        if (!key) return "Welcome. Let's start with focus.";
+        
         const day = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
-        const prompt = `You are a legendary mobility coach. Today is ${day}. Give 2 sentences of wildly interesting, peppy, and slightly poetic advice for a session on Back and Hips. Use a unique metaphor. Max 35 words.`;
+        const prompt = `You are a mobility coach. Today is ${day}. Give 2 peppy, poetic sentences of advice for Back and Hips. Metaphorical. Max 30 words.`;
 
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${key}`, {
@@ -138,30 +162,22 @@
                 body: JSON.stringify({ contents: [{ parts: [{ text: prompt }]}] })
             });
             const data = await res.json();
-            if (data.candidates && data.candidates[0].content) {
-                return data.candidates[0].content.parts[0].text;
-            }
-            throw new Error("No Content");
+            return data.candidates[0].content.parts[0].text;
         } catch (e) {
-            console.error("AI Error:", e);
-            return "Sunday is for shedding the week's weight. Let your spine become a liquid ribbon.";
+            console.warn("AI Fallback triggered.");
+            return "Sunday is for turning your spine into liquid gold.";
         }
     }
 
     document.getElementById('startBtn').addEventListener('click', function() {
-        // Unlock audio
-        synth.speak(new SpeechSynthesisUtterance(""));
-
-        // Switch UI
+        synth.speak(new SpeechSynthesisUtterance("")); // Mobile Unlock
         document.getElementById('gearIcon').style.display = 'none';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
         
         updateUI();
         interval = setInterval(tick, 1000);
-        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
 
-        // Background AI logic
         fetchAiAdvice().then(advice => {
             const bubble = document.getElementById('ai-advice-bubble');
             bubble.innerText = advice;
@@ -189,16 +205,11 @@
             const ex = routine[currentC].exercises[currentE];
             time = total = ex.d; tipSpoken = false;
             speak(ex.n); 
-            document.getElementById('ai-advice-bubble').style.display = 'none'; // Hide advice when work starts
+            document.getElementById('ai-advice-bubble').style.display = 'none';
         } else {
             currentE++;
             if (currentE >= routine[currentC].exercises.length) { currentE = 0; currentC++; }
-            if (currentC >= routine.length) { 
-                clearInterval(interval); 
-                speak("Flow complete. You are loose and ready."); 
-                setTimeout(() => location.reload(), 3000);
-                return; 
-            }
+            if (currentC >= routine.length) { clearInterval(interval); location.reload(); return; }
             mode = 'PREP'; time = total = 8;
             speak("Next: " + routine[currentC].exercises[currentE].n);
         }
@@ -209,7 +220,7 @@
         const ex = routine[currentC].exercises[currentE];
         document.getElementById('time').innerText = time;
         document.getElementById('ex-title').innerText = ex.n;
-        document.getElementById('phase').innerText = mode === 'PREP' ? 'Prepare' : 'Go';
+        document.getElementById('phase').innerText = mode;
         const offset = 816 - (816 * (time / total));
         document.getElementById('prog').style.strokeDashoffset = offset;
         document.body.className = mode.toLowerCase();
@@ -221,12 +232,8 @@
     }
 
     function saveKey() {
-        const val = document.getElementById('apiKeyInput').value.trim();
-        if (val) {
-            localStorage.setItem('GEMINI_KEY', val);
-            toggleSettings();
-            alert("Coach Ready!");
-        }
+        localStorage.setItem('GEMINI_KEY', document.getElementById('apiKeyInput').value.trim());
+        toggleSettings();
     }
 
     document.getElementById('p_btn').onclick = () => {
