@@ -17,45 +17,29 @@
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s, color 0.4s; }
-        
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
-        
-        #setup, #timer { 
-            position: fixed; inset: 0; 
-            padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px);
-            display: flex; flex-direction: column; 
-        }
-        
+        #setup, #timer { position: fixed; inset: 0; padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px); display: flex; flex-direction: column; }
         .summary-card { background: #1c1c1e; border-radius: 20px; padding: 16px; margin: 20px 0; }
         .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #3a3a3c; }
-        
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
         .ex-name { font-size: 32px; font-weight: 800; line-height: 1.2; min-height: 80px; display: flex; align-items: center; justify-content: center; }
-        
         .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; }
         circle { fill: none; stroke-width: 10; stroke-linecap: round; }
         .bg-c { stroke: rgba(0,0,0,0.1); }
         .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
-        
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
         .next-card { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; width: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-        
         .work .next-card, .prep .next-card { background: rgba(0,0,0,0.1); }
-
         .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; }
         .start-btn { background: var(--w); color: #000; }
         .ctrls { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .row-ctrls { display: flex; gap: 12px; width: 100%; }
-        
         .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
         .skip-btn { background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.1); }
         .work .pause-btn, .prep .pause-btn { background: rgba(0,0,0,0.1); color: #000; border: 1px solid rgba(0,0,0,0.1); }
-        .work .skip-btn, .prep .skip-btn { background: rgba(0,0,0,0.05); color: #000; border: 1px solid rgba(0,0,0,0.1); }
-        
         .exit-btn { background: transparent; color: #8e8e93; font-size: 14px; padding: 10px; }
-        .work .exit-btn, .prep .exit-btn { color: rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
@@ -78,7 +62,6 @@
         <div id="ex-title" class="ex-name">Ready</div>
         <div id="cycle-step" style="font-size:12px; font-weight:600; opacity:0.5;">Cycle 1/4</div>
     </div>
-
     <div class="ring">
         <svg viewBox="0 0 300 300">
             <circle class="bg-c" cx="150" cy="150" r="130"></circle>
@@ -86,12 +69,10 @@
         </svg>
         <div id="time" class="time">10</div>
     </div>
-
     <div id="next-label" class="next-card">
         <span id="next-label-text" style="font-size:10px; text-transform:uppercase; opacity:0.6; display:block">Next Position</span>
         <span id="next-ex-name" style="font-size:18px; font-weight:600"></span>
     </div>
-
     <div class="ctrls">
         <div class="row-ctrls">
             <button id="p_btn" class="btn pause-btn">Pause</button>
@@ -102,50 +83,85 @@
 </div>
 
 <script>
+    // Routine updated with "Secret Sauce" guidance from image
     const routine = [
-        {name: "Back", exercises:[{n:"Cat–cow",d:30},{n:"Thread needle (L)",d:15},{n:"Thread needle (R)",d:15},{n:"Pelvic tilts",d:30},{n:"Tug knee (L)",d:15},{n:"Tug knee (R)",d:15},{n:"Crossover twist (L)",d:15},{n:"Crossover twist (R)",d:15},{n:"Child to Sphinx",d:30}]},
-        {name: "Hips", exercises:[{n:"Walking lunge",d:30},{n:"Cossack squat",d:30},{n:"Hip flexor (R)",d:15},{n:"Hamstring (R)",d:15},{n:"Hip flexor (L)",d:15},{n:"Hamstring (L)",d:15},{n:"Cossack hold (R)",d:15},{n:"Cossack hold (L)",d:15}]},
-        {name: "Ankle", exercises:[{n:"Walk the dog",d:30},{n:"Calf rocks",d:30},{n:"Squat to reach",d:30},{n:"Calf stretch (R)",d:15},{n:"Calf stretch (L)",d:15},{n:"Quad stretch (R)",d:15},{n:"Quad stretch (L)",d:15},{n:"Hamstring (R)",d:15},{n:"Hamstring (L)",d:15}]},
-        {name: "Core", exercises:[{n:"Dead bug",d:20},{n:"Super mans",d:20},{n:"Boat pose",d:20},{n:"Russian twists",d:20},{n:"Pass the ball",d:20},{n:"Sit ups",d:20}]}
+        {name: "Back", exercises:[
+            {n:"Cat-Cow",d:30, t:"Think string of pearls—move one vertebrae at a time."},
+            {n:"Child to Sphinx",d:30, t:"Slink forward from a ball into a proud chest opener."},
+            {n:"Pelvic Tilts",d:30, t:"Just tilt the bowl of your pelvis; keep the legs quiet."},
+            {n:"Thread Needle (L)",d:15, t:"Reach under like you're grabbing a lost remote."},
+            {n:"Thread Needle (R)",d:15, t:"Hips square, let the twist happen in your mid-back."},
+            {n:"Tug Knee (L)",d:15, t:"Pull your knee toward your armpit to reset the lower back."},
+            {n:"Tug Knee (R)",d:15, t:"Gentle decompression. Feel the hip crease compress."},
+            {n:"Crossover Twist (L)",d:15, t:"Keep the opposite shoulder glued to the floor."},
+            {n:"Crossover Twist (R)",d:15, t:"Breathe into your ribs; feel the side-body release."}
+        ]},
+        {name: "Hips", exercises:[
+            {n:"Walking Lunge",d:30, t:"Tall Spine. Don't lean! Feel the back hip unzip as you step."},
+            {n:"Cossack Squat",d:30, t:"Shift side to side. Keep your heels on the dirt."},
+            {n:"Hip Flexor (L)",d:15, t:"Squeeze your left butt cheek to open the front."},
+            {n:"Hip Flexor (R)",d:15, t:"Stay upright. Don't arch your lower back."},
+            {n:"Hamstring (L)",d:15, t:"Butt back, chest flat. Feel the pull behind the thigh."},
+            {n:"Hamstring (R)",d:15, t:"No hunching! Keep that leg as straight as you can."},
+            {n:"Cossack Hold (L)",d:15, t:"Sit deep on the left, right toes point to the sky."},
+            {n:"Cossack Hold (R)",d:15, t:"Find your edge and breathe through the inner thigh heat."}
+        ]},
+        {name: "Ankle", exercises:[
+            {n:"Walk the Dog",d:30, t:"Drive those heels down. Wake up the Achilles."},
+            {n:"Squat to Reach",d:30, t:"Full Body. Deep squat, then reach for the stars."},
+            {n:"Calf Rocks",d:30, t:"Slow ballerina toes, then heavy lead-weight heels."},
+            {n:"Calf Stretch (L)",d:15, t:"Keep the back leg straight and the heel down."},
+            {n:"Calf Stretch (R)",d:15, t:"Steady pressure. Feel the belly of the muscle."},
+            {n:"Hamstring (L)",d:15, t:"Pull toes toward your shin to feel the nerve stretch."},
+            {n:"Hamstring (R)",d:15, t:"Keep your hips square to the front."},
+            {n:"Quad Stretch (L)",d:15, t:"Knees together! Don't let the left knee flare out."},
+            {n:"Quad Stretch (R)",d:15, t:"Stand tall. Don't let your lower back arch away."}
+        ]},
+        {name: "Core", exercises:[
+            {n:"Russian Twists",d:20, t:"Wring it Out: Rotate the ribcage, not just the arms."},
+            {n:"Sit Ups",d:20, t:"No Momentum: Use the abs to peel yourself off the mat."},
+            {n:"Pass the Ball",d:20, t:"Control: Don't let your back pop off the floor as you extend."},
+            {n:"Super Mans",d:20, t:"Look down at the floor. Squeeze your back corset."},
+            {n:"Dead Bug",d:20, t:"Crush that imaginary grape under your lower back."},
+            {n:"Boat Pose",d:20, t:"Shake it out! Keep the chest high and hold on."}
+        ]}
     ];
 
     let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
     let wakeLock = null;
+    let guidanceIndices = []; // Stores which exercises will have tips this session
     const synth = window.speechSynthesis;
 
-    // --- Screen Wake Lock ---
+    function setupGuidance() {
+        const allEx = [];
+        routine.forEach((c, cIdx) => c.exercises.forEach((e, eIdx) => allEx.push(`${cIdx}-${eIdx}`)));
+        
+        // Randomly pick 30% of total exercises
+        const count = Math.floor(allEx.length * 0.3);
+        guidanceIndices = allEx.sort(() => 0.5 - Math.random()).slice(0, count);
+    }
+
     async function requestWakeLock() {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-            }
-        } catch (err) {
-            console.error(`${err.name}, ${err.message}`);
-        }
+        try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
     }
 
     function speak(t) {
         synth.cancel();
         const m = new SpeechSynthesisUtterance(t);
-        m.rate = 1.1;
+        m.rate = 1.0;
         synth.speak(m);
     }
 
     function updateUI() {
         const ex = routine[currentC].exercises[currentE];
         const next = routine[currentC].exercises[currentE + 1] || (routine[currentC + 1] ? routine[currentC+1].exercises[0] : null);
-        
         document.getElementById('time').innerText = time;
         document.getElementById('ex-title').innerText = ex.n;
         document.getElementById('phase').innerText = mode === 'PREP' ? 'Prepare' : 'Go';
         document.getElementById('cycle-step').innerText = `Cycle ${currentC + 1}/4: ${routine[currentC].name}`;
-        
         document.getElementById('next-ex-name').innerText = next ? next.n : 'Finish';
-        document.getElementById('next-label-text').innerText = mode === 'PREP' ? 'Then...' : 'Next Position';
-
         const offset = 816 - (816 * (time / total));
         document.getElementById('prog').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
-        
         document.body.className = mode === 'WORK' ? 'work' : 'prep';
     }
 
@@ -155,9 +171,7 @@
             time--;
             if (time <= 3 && time > 0) speak(time);
             updateUI();
-        } else {
-            nextStep();
-        }
+        } else { nextStep(); }
     }
 
     function nextStep() {
@@ -165,22 +179,20 @@
             mode = 'WORK';
             const ex = routine[currentC].exercises[currentE];
             time = total = ex.d;
-            speak(ex.n);
+            
+            // Check if this specific exercise was randomized for guidance
+            let announcement = ex.n;
+            if (guidanceIndices.includes(`${currentC}-${currentE}`)) {
+                announcement += ". " + ex.t;
+            }
+            speak(announcement);
         } else {
             currentE++;
-            if (currentE >= routine[currentC].exercises.length) {
-                currentE = 0; 
-                currentC++;
-            }
-            
-            if (currentC >= routine.length) {
-                completeWorkout();
-                return;
-            }
-            
+            if (currentE >= routine[currentC].exercises.length) { currentE = 0; currentC++; }
+            if (currentC >= routine.length) { completeWorkout(); return; }
             mode = 'PREP';
             time = total = 8;
-            speak("Next up: " + routine[currentC].exercises[currentE].n);
+            speak("Next: " + routine[currentC].exercises[currentE].n);
         }
         updateUI();
     }
@@ -188,25 +200,18 @@
     function completeWorkout() {
         clearInterval(interval);
         if (wakeLock) wakeLock.release().then(() => wakeLock = null);
-        speak("Workout Complete");
-        setTimeout(() => location.reload(), 2000);
+        speak("Workout Complete. Great job.");
+        setTimeout(() => location.reload(), 3000);
     }
 
-    // --- Event Listeners ---
-
     document.getElementById('startBtn').addEventListener('click', function() {
-        requestWakeLock(); // Prevent screen sleep
-        const m = new SpeechSynthesisUtterance('');
-        synth.speak(m);
-        
+        setupGuidance(); // Randomize guidance for this session
+        requestWakeLock();
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
-        
-        mode = 'PREP';
-        time = total = 10;
         updateUI();
         interval = setInterval(tick, 1000);
-        speak("Starting with " + routine[0].exercises[0].n);
+        speak("Starting workout. Get ready for " + routine[0].exercises[0].n);
     });
 
     document.getElementById('p_btn').addEventListener('click', function() {
@@ -214,25 +219,10 @@
         this.innerText = paused ? 'Resume' : 'Pause';
     });
 
-    document.getElementById('skip_btn').addEventListener('click', function() {
-        // Skip current action and go to the next logic gate
-        time = 0;
-        nextStep();
-    });
+    document.getElementById('skip_btn').addEventListener('click', () => { time = 0; nextStep(); });
 
-    document.getElementById('exitBtn').addEventListener('click', function() {
-        const confirmExit = confirm("Stop workout and return to start?");
-        if (confirmExit) {
-            if (wakeLock) wakeLock.release();
-            location.reload();
-        }
-    });
-
-    // Re-request wake lock if user leaves and returns to tab
-    document.addEventListener('visibilitychange', async () => {
-        if (wakeLock !== null && document.visibilityState === 'visible') {
-            await requestWakeLock();
-        }
+    document.getElementById('exitBtn').addEventListener('click', () => {
+        if (confirm("Stop workout?")) location.reload();
     });
 </script>
 </body>
