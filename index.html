@@ -185,6 +185,13 @@
         paused = !paused; this.innerText = paused ? 'Resume' : 'Pause';
     };
     document.getElementById('skip_btn').onclick = () => { time = 0; };
+// Add this at the very bottom of your <script> section
+window.onload = () => {
+    const savedKey = localStorage.getItem('GEMINI_KEY');
+    if (savedKey) {
+        document.getElementById('apiKeyInput').value = savedKey;
+    }
+};
 </script>
 </body>
 </html>
