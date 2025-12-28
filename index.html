@@ -10,10 +10,13 @@
         body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
+        
         #setup, #timer { position: fixed; inset: 0; padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px); display: flex; flex-direction: column; }
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
+        
         .summary-card { background: #1c1c1e; border-radius: 20px; padding: 16px; margin: 15px 0; border: 1px solid #333; }
         .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #333; }
+        
         .ex-name { font-size: 32px; font-weight: 800; line-height: 1.2; min-height: 80px; display: flex; align-items: center; justify-content: center; }
         .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; }
@@ -21,17 +24,18 @@
         .bg-c { stroke: rgba(0,0,0,0.1); }
         .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
-        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; transition: transform 0.1s; }
-        .btn:active { transform: scale(0.98); }
+        
+        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; }
         .start-btn { background: var(--w); color: #000; }
         .ctrls { display: flex; flex-direction: column; gap: 10px; width: 100%; }
         .row-ctrls { display: flex; gap: 12px; }
         .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
         .skip-btn { background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.1); }
-        .exit-btn { background: transparent; color: #8e8e93; font-size: 14px; }
+        
+        /* Modal Fixes */
         #api-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 40px 24px; flex-direction: column; gap: 20px; justify-content: center; }
-        .settings-btn { position: absolute; top: calc(var(--safe-top) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; }
-        input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 15px; border-radius: 12px; }
+        .settings-btn { position: absolute; top: calc(var(--safe-top) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; z-index: 10; cursor: pointer; }
+        input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 18px; border-radius: 12px; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -39,27 +43,30 @@
 <button id="gearIcon" class="settings-btn" onclick="toggleSettings()">⚙️</button>
 
 <div id="api-modal">
-    <h2>AI Coach Settings</h2>
-    <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key...">
-    <button class="btn start-btn" onclick="saveKey()">Save & Close</button>
+    <h2 style="margin:0">AI Coach Setup</h2>
+    <p style="color: #8e8e93; font-size: 14px;">Enter your Gemini API key to unlock dynamic coaching messages.</p>
+    <input type="password" id="apiKeyInput" placeholder="Paste Key Here...">
+    <button class="btn start-btn" onclick="saveKey()">Save Key</button>
+    <button class="btn" style="background:transparent; color:#fff;" onclick="toggleSettings()">Close</button>
 </div>
 
 <div id="setup">
-    <h1 style="margin:0;">Mobility Flow</h1>
-    <p id="current-day" style="color:#8e8e93;">Sunday Reset</p>
+    <h1 style="margin:0; font-size: 34px;">Mobility Flow</h1>
+    <p id="current-day" style="color:#8e8e93; margin-top:4px">Ready to flow?</p>
     <div class="summary-card">
-        <div class="stat-row"><span>Focus</span><strong>Back & Hips</strong></div>
-        <div class="stat-row"><span>Duration</span><strong>14 Mins</strong></div>
-        <div class="stat-row"><span>Intensity</span><strong>Fluid</strong></div>
+        <div class="stat-row"><span>Cycle 1</span><strong>Back</strong></div>
+        <div class="stat-row"><span>Cycle 2</span><strong>Hips</strong></div>
+        <div class="stat-row"><span>Cycle 3</span><strong>Ankle</strong></div>
+        <div class="stat-row"><span>Cycle 4</span><strong>Core</strong></div>
     </div>
     <button class="btn start-btn" id="startBtn">Unlock & Start</button>
 </div>
 
 <div id="timer">
     <div>
-        <div id="phase">Prepare</div>
+        <div id="phase" style="font-size:12px; letter-spacing:2px; font-weight:800; opacity:0.6; text-transform:uppercase">Prepare</div>
         <div id="ex-title" class="ex-name">Ready</div>
-        <div id="cycle-step" style="opacity:0.5;">Cycle 1/4</div>
+        <div id="cycle-step" style="font-size:12px; font-weight:600; opacity:0.5;">Cycle 1/4</div>
     </div>
     <div class="ring">
         <svg viewBox="0 0 300 300">
@@ -73,15 +80,20 @@
             <button id="p_btn" class="btn pause-btn">Pause</button>
             <button id="skip_btn" class="btn skip-btn">Skip</button>
         </div>
-        <button class="btn exit-btn" onclick="location.reload()">End Workout</button>
+        <button class="btn" style="background:transparent; color:#8e8e93; font-size:14px;" onclick="location.reload()">End Workout</button>
     </div>
 </div>
 
 <script>
-    // Simplified routine for testing; expand as needed
     const routine = [
-        {name: "Back", exercises:[{n:"Cat-Cow",d:30, t:"Move one vertebrae at a time."},{n:"Child to Sphinx",d:30, t:"Slink forward."}]},
-        {name: "Hips", exercises:[{n:"Walking Lunge",d:30, t:"Tall spine."},{n:"Cossack Squat",d:30, t:"Heels down."}]}
+        {name: "Back", exercises:[
+            {n:"Cat-Cow",d:30, t:"Move one vertebrae at a time like a wave."},
+            {n:"Child to Sphinx",d:30, t:"Slink forward and open your chest."}
+        ]},
+        {name: "Hips", exercises:[
+            {n:"Walking Lunge",d:30, t:"Tall spine, unzip your back hip."},
+            {n:"Cossack Squat",d:30, t:"Keep your heels heavy on the earth."}
+        ]}
     ];
 
     let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
@@ -92,45 +104,48 @@
         if (!text) return;
         synth.cancel();
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 1.1; msg.pitch = 1.0;
+        msg.rate = 1.0; msg.pitch = 1.0;
         synth.speak(msg);
     }
 
     async function fetchAiAdvice() {
         const key = localStorage.getItem('GEMINI_KEY');
-        if (!key) return "Let's find some flow today.";
-        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-        const day = days[new Date().getDay()];
+        if (!key) return "Welcome to your session. Let's move with focus.";
+
+        const now = new Date();
+        const day = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
         
-        const prompt = `You are an eccentric, high-energy mobility coach. Today is ${day}. 
-        The user is starting a session for Back and Hips. 
-        Give 2 sentences of wildly interesting, peppy, and slightly poetic advice. 
-        Use a fun metaphor. Max 30 words.`;
+        const promptText = `You are an eccentric, soulful mobility coach. Today is ${day}. The user is starting a session for Back and Hips. Give 2-3 sentences of peppy, slightly poetic, and highly motivating advice. Use a unique metaphor about the body. Max 35 words.`;
 
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }]}] })
+                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }]}] })
             });
             const data = await res.json();
             return data.candidates[0].content.parts[0].text;
-        } catch (e) { return "Move like water. Let the tension melt away."; }
+        } catch (e) {
+            console.error(e);
+            return "Let your spine become a liquid ribbon. Leave the world's weight outside this room.";
+        }
     }
 
-    document.getElementById('startBtn').addEventListener('click', async function() {
-        // UI AND AUDIO UNLOCK (Immediate)
-        speak("Consulting the coach.");
+    document.getElementById('startBtn').addEventListener('click', function() {
+        // 1. Audio Handshake (Crucial for Mobile)
+        const silent = new SpeechSynthesisUtterance("");
+        synth.speak(silent);
+
+        // 2. Immediate UI Transition (Prevents Freezing)
         document.getElementById('gearIcon').style.display = 'none';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
         
-        // Start the timer immediately so buttons aren't frozen
         updateUI();
         interval = setInterval(tick, 1000);
         if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
 
-        // Fetch AI advice in the BACKGROUND
+        // 3. Background AI Fetch
         fetchAiAdvice().then(advice => {
             speak(advice);
         });
@@ -159,11 +174,13 @@
             currentE++;
             if (currentE >= routine[currentC].exercises.length) { currentE = 0; currentC++; }
             if (currentC >= routine.length) { 
-                clearInterval(interval); speak("Session complete. You are a new person."); 
-                setTimeout(() => location.reload(), 3000); return; 
+                clearInterval(interval); 
+                speak("Workout complete. You are loose and ready for the world."); 
+                setTimeout(() => location.reload(), 3000);
+                return; 
             }
             mode = 'PREP'; time = total = 8;
-            speak("Next up: " + routine[currentC].exercises[currentE].n);
+            speak("Next: " + routine[currentC].exercises[currentE].n);
         }
         updateUI();
     }
@@ -172,20 +189,31 @@
         const ex = routine[currentC].exercises[currentE];
         document.getElementById('time').innerText = time;
         document.getElementById('ex-title').innerText = ex.n;
-        document.getElementById('phase').innerText = mode;
+        document.getElementById('phase').innerText = mode === 'PREP' ? 'Prepare' : 'Go';
         document.getElementById('cycle-step').innerText = `Cycle ${currentC+1}/4: ${routine[currentC].name}`;
-        const offset = 816 - (816 * (time / (total || 1)));
+        const offset = 816 - (816 * (time / total));
         document.getElementById('prog').style.strokeDashoffset = offset;
         document.body.className = mode.toLowerCase();
     }
 
-    function toggleSettings() { document.getElementById('api-modal').style.display = 'flex'; }
-    function saveKey() {
-        localStorage.setItem('GEMINI_KEY', document.getElementById('apiKeyInput').value);
-        document.getElementById('api-modal').style.display = 'none';
+    function toggleSettings() {
+        const m = document.getElementById('api-modal');
+        m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    document.getElementById('p_btn').onclick = () => { paused = !paused; document.getElementById('p_btn').innerText = paused ? 'Resume' : 'Pause'; };
+    function saveKey() {
+        const val = document.getElementById('apiKeyInput').value.trim();
+        if (val) {
+            localStorage.setItem('GEMINI_KEY', val);
+            toggleSettings();
+            alert("Key Saved!");
+        }
+    }
+
+    document.getElementById('p_btn').onclick = () => {
+        paused = !paused;
+        document.getElementById('p_btn').innerText = paused ? 'Resume' : 'Pause';
+    };
     document.getElementById('skip_btn').onclick = () => { time = 0; };
 </script>
 </body>
