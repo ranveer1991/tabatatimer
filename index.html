@@ -91,19 +91,41 @@
 
     function speak(t) { if(!t) return; synth.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = 1.0; synth.speak(m); }
 
-    async function fetchAiAdvice() {
-        const key = localStorage.getItem('GEMINI_KEY');
-        if (!key) return "Let's focus on deep, fluid movement today.";
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: "You are a peppy mobility coach. Give 1 sentence of poetic advice for the day. Consider the time of the week, day and year. 20 words max." }]}] })
-            });
-            const data = await res.json();
-            return data.candidates[0].content.parts[0].text;
-        } catch (e) { return "Let your spine be a liquid ribbon."; }
+  async function fetchAiAdvice() {
+    const key = localStorage.getItem('GEMINI_KEY');
+    if (!key) return "Let's focus on deep, fluid movement today.";
+
+    // Get current time/date data
+    const now = new Date();
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+    const dayName = days[now.getDay()];
+    const monthName = months[now.getMonth()];
+    const date = now.getDate();
+    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // Create the dynamic context
+    const timeContext = `Today is ${dayName}, ${monthName} ${date}, and the current time is ${time}.`;
+
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ 
+                text: `Context: ${timeContext} 
+                       Role: You are a peppy mobility coach. 
+                       Task: Give 1 sentence of poetic advice for a back/hip session. 
+                       Style: Mention the specific day of the week or the time of day (e.g., "morning energy" or "evening release") to make it feel personal. 
+                       Constraint: 25 words max.` 
+            }]}] })
+        });
+        const data = await res.json();
+        return data.candidates[0].content.parts[0].text;
+    } catch (e) { 
+        return "API isn't working - Let your spine be a liquid ribbon as you start your session."; 
     }
+}
 
     document.getElementById('startBtn').onclick = () => {
         synth.speak(new SpeechSynthesisUtterance("")); 
