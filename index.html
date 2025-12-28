@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mobility Flow</title>
+    <title>Daily Mobility Flow</title>
     <style>
         :root { --w: #30d158; --a: #ff9f0a; --p: #000; --st: env(safe-area-inset-top); --sb: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -11,6 +11,10 @@
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
         
+        #progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: rgba(255,255,255,0.1); z-index: 1000; }
+        #progress-fill { height: 100%; width: 0%; background: var(--w); transition: width 0.5s ease; }
+        body.prep #progress-fill { background: #fff; }
+
         #setup, #timer { position: fixed; inset: 0; padding: calc(var(--st) + 20px) 24px calc(var(--sb) + 20px); display: flex; flex-direction: column; }
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
         
@@ -35,12 +39,13 @@
         .primary { background: var(--w); color: #000; }
         
         #api-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 40px 24px; flex-direction: column; gap: 10px; justify-content: center; }
-        .settings-btn { position: absolute; top: calc(var(--st) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; z-index: 10; }
+        .settings-btn { position: absolute; top: calc(var(--st) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; z-index: 101; }
         input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 18px; border-radius: 12px; font-size: 16px; width: 100%; }
     </style>
 </head>
 <body>
 
+<div id="progress-container"><div id="progress-fill"></div></div>
 <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
 
 <div id="api-modal">
@@ -50,15 +55,17 @@
 </div>
 
 <div id="setup">
-    <h1 style="margin:0; font-size: 34px;">Daily Mobility Flow</h1>
+    <h1 style="margin:0; font-size: 34px; letter-spacing: -1px;">Daily Mobility Flow</h1>
     <div class="card">
-        <div class="row"><span>Focus</span><strong>4 Cycles!</strong></div>
+        <div class="row"><span>Focus</span><strong>Full Body Flow</strong></div>
+        <div class="row"><span>Coach</span><strong>Gemini 3 Flash</strong></div>
     </div>
     <button class="btn primary" id="startBtn">Begin Flow</button>
 </div>
 
 <div id="timer">
     <div>
+        <div id="cycle-label" style="font-size:10px; color:rgba(255,255,255,0.5); margin-bottom:4px; font-weight:bold;">CYCLE 1/4</div>
         <div id="phase" style="font-size:12px; letter-spacing:2px; font-weight:800; opacity:0.6; text-transform:uppercase">Prepare</div>
         <div id="ex-title" class="ex-name">Ready</div>
         <div id="ai-advice-bubble" class="ai-bubble"></div>
@@ -70,7 +77,7 @@
         </svg>
         <div id="time" class="time">10</div>
     </div>
-    <div style="width:130%">
+    <div style="width:100%">
         <div style="display:flex; gap:10px; margin-bottom:10px;">
             <button id="p_btn" class="btn" style="background:rgba(255,255,255,0.2); color:#fff; flex:2;">Pause</button>
             <button id="skip_btn" class="btn" style="background:rgba(255,255,255,0.1); color:#fff; flex:1;">Skip</button>
@@ -81,55 +88,86 @@
 
 <script>
     const routine = [
-        {name: "Back", exercises:[{n:"Cat-Cow",d:30, t:"Move like a wave."},{n:"Sphinx",d:30, t:"Peel the chest up."}]},
-        {name: "Hips", exercises:[{n:"Lunge",d:30, t:"Stay tall."},{n:"Cossack",d:30, t:"Heavy heels."}]}
+        { name: "Back", exercises:[
+            {n:"Cat-Cow", d:30, t:"Flow it: Think string of pearls—move one vertebrae at a time."},
+            {n:"Child to Sphinx", d:30, t:"The Melt: Slink forward from a ball into a proud chest opener."},
+            {n:"Pelvic Tilts", d:30, t:"The Tuck: Just tilt the bowl of your pelvis; keep the legs quiet."},
+            {n:"Thread Needle (L)", d:15, t:"Reach: Reach under like you're grabbing a lost remote."},
+            {n:"Thread Needle (R)", d:15, t:"Reach: Hips square, let the twist happen in your mid-back."},
+            {n:"Tug Knee (L)", d:15, t:"Hug: Pull your knee toward your armpit to reset the lower back."},
+            {n:"Tug Knee (R)", d:15, t:"Hug: Gentle decompression. Feel the hip crease compress."},
+            {n:"Crossover Twist (L)", d:15, t:"Pin it: Keep the opposite shoulder glued to the floor."},
+            {n:"Crossover Twist (R)", d:15, t:"Spiral: Breathe into your ribs; feel the side-body release."}
+        ]},
+        { name: "Hips", exercises:[
+            {n:"Walking Lunge", d:30, t:"Tall Spine: Don't lean! Feel the back hip unzip as you step."},
+            {n:"Cossack Squat", d:30, t:"Ninja Mode: Shift side to side. Keep your heels on the dirt."},
+            {n:"Hip Flexor (L)", d:15, t:"The Glute Squeeze: Squeeze your left butt cheek to open the front."},
+            {n:"Hip Flexor (R)", d:15, t:"The Glute Squeeze: Stay upright. Don't arch your lower back."},
+            {n:"Hamstring (L)", d:15, t:"Hinge: Butt back, chest flat. Feel the pull behind the thigh."},
+            {n:"Hamstring (R)", d:15, t:"Hinge: No hunching! Keep that leg as straight as you can."},
+            {n:"Cossack Hold (L)", d:15, t:"Sink: Sit deep on the left, right toes point to the sky."},
+            {n:"Cossack Hold (R)", d:15, t:"Sink: Find your edge and breathe through the inner thigh heat."}
+        ]},
+        { name: "Ankle", exercises:[
+            {n:"Walk the Dog", d:30, t:"Pedal: Drive those heels down. Wake up the Achilles."},
+            {n:"Squat to Reach", d:30, t:"Full Body: Deep squat, then reach for the stars."},
+            {n:"Calf Rocks", d:30, t:"Pump: Slow ballerina toes, then heavy lead-weight heels."},
+            {n:"Calf Stretch (L)", d:15, t:"Wall Lean: Keep the back leg straight and the heel down."},
+            {n:"Calf Stretch (R)", d:15, t:"Wall Lean: Steady pressure. Feel the belly of the muscle."},
+            {n:"Hamstring (L)", d:15, t:"The Zing: Pull toes toward your shin to feel the nerve stretch."},
+            {n:"Hamstring (R)", d:15, t:"The Zing: Keep your hips square to the front."},
+            {n:"Quad Stretch (L)", d:15, t:"Tuck: Knees together! Don't let the left knee flare out."},
+            {n:"Quad Stretch (R)", d:15, t:"Postured: Stand tall. Don't let your lower back arch away."}
+        ]},
+        { name: "Core", exercises:[
+            {n:"Russian Twists", d:20, t:"Wring it Out: Rotate the ribcage, not just the arms."},
+            {n:"Sit Ups", d:20, t:"No Momentum: Use the abs to peel yourself off the mat."},
+            {n:"Pass the Ball", d:20, t:"Control: Don't let your back pop off the floor as you extend."},
+            {n:"Super Mans", d:20, t:"Flight: Look down at the floor. Squeeze your back corset."},
+            {n:"Dead Bug", d:20, t:"The Grape: Crush that imaginary grape under your lower back."},
+            {n:"Boat Pose", d:20, t:"The Finisher: Shake it out! Keep the chest high and hold on."}
+        ]}
     ];
 
+    const totalExercises = routine.reduce((sum, cycle) => sum + cycle.exercises.length, 0);
+    let exercisesCompleted = 0;
     let cC = 0, cE = 0, mode = 'PREP', time = 20, total = 20, interval = null, paused = false, tipSpoken = false;
     const synth = window.speechSynthesis;
 
     function speak(t) { if(!t) return; synth.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = 1.0; synth.speak(m); }
 
-  async function fetchAiAdvice() {
-    const key = localStorage.getItem('GEMINI_KEY');
-    if (!key) return "Let's focus on deep, fluid movement today.";
+    window.onload = () => {
+        const savedKey = localStorage.getItem('GEMINI_KEY');
+        if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
+    };
 
-    // Get current time/date data
-    const now = new Date();
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    
-    const dayName = days[now.getDay()];
-    const monthName = months[now.getMonth()];
-    const date = now.getDate();
-    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    // Create the dynamic context
-    const timeContext = `Today is ${dayName}, ${monthName} ${date}, and the current time is ${time}.`;
+    async function fetchAiAdvice() {
+        const key = localStorage.getItem('GEMINI_KEY');
+        if (!key) return "Let's focus on deep, fluid movement today.";
+        const now = new Date();
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const timeContext = `Today is ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, and the current time is ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
 
-    try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ 
-                text: `Context: ${timeContext} 
-                       Role: You are a peppy mobility coach. 
-                       Task: Give 1 sentence of poetic advice for a back/hip session. 
-                       Style: Mention the specific day of the week or the time of day (e.g., "morning energy" or "evening release") to make it feel personal. 
-                       Constraint: 15 words max.` 
-            }]}] })
-        });
-        const data = await res.json();
-        return data.candidates[0].content.parts[0].text;
-    } catch (e) { 
-        return "API isn't working - Let your spine be a liquid ribbon as you start your session."; 
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${key}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ 
+                    text: `Context: ${timeContext} Role: Peppy mobility coach. Task: Give 1 sentence of poetic advice for a full body session. Mention the specific day or time. Constraint: 25 words max.` 
+                }]}] })
+            });
+            const data = await res.json();
+            return data.candidates[0].content.parts[0].text;
+        } catch (e) { return "Let your spine be a liquid ribbon as you start your session."; }
     }
-}
 
     document.getElementById('startBtn').onclick = () => {
         synth.speak(new SpeechSynthesisUtterance("")); 
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
+        speak("Starting " + routine[cC].name + " Cycle"); // Initial announcement
         updateUI();
         interval = setInterval(() => {
             if (paused) return;
@@ -137,7 +175,8 @@
                 time--;
                 if (time <= 3 && time > 0) speak(time);
                 if (mode === 'WORK' && !tipSpoken && time === Math.floor(total/2)) {
-                    speak(routine[cC].exercises[cE].t); tipSpoken = true;
+                    if (Math.random() < 0.33) speak(routine[cC].exercises[cE].t);
+                    tipSpoken = true;
                 }
                 updateUI();
             } else { nextStep(); }
@@ -154,9 +193,27 @@
             time = total = ex.d; tipSpoken = false; speak(ex.n); 
             document.getElementById('ai-advice-bubble').style.display = 'none';
         } else {
-            cE++; if (cE >= routine[cC].exercises.length) { cE = 0; cC++; }
+            exercisesCompleted++; 
+            cE++; 
+            let cycleTransition = false;
+            
+            if (cE >= routine[cC].exercises.length) { 
+                cE = 0; 
+                cC++; 
+                cycleTransition = true;
+            }
+            
             if (cC >= routine.length) { location.reload(); return; }
-            mode = 'PREP'; time = total = 8; speak("Next: " + routine[cC].exercises[cE].n);
+            
+            mode = 'PREP'; 
+            // Double the time if we changed cycles
+            time = total = cycleTransition ? 16 : 8; 
+            
+            if (cycleTransition) {
+                speak("Next Cycle: " + routine[cC].name);
+            } else {
+                speak("Next: " + routine[cC].exercises[cE].n);
+            }
         }
         updateUI();
     }
@@ -166,7 +223,12 @@
         document.getElementById('time').innerText = time;
         document.getElementById('ex-title').innerText = ex.n;
         document.getElementById('phase').innerText = mode;
+        document.getElementById('cycle-label').innerText = `CYCLE ${cC + 1}/4: ${routine[cC].name.toUpperCase()}`;
         document.getElementById('prog').style.strokeDashoffset = 816 - (816 * (time / total));
+        
+        const progressPercent = (exercisesCompleted / totalExercises) * 100;
+        document.getElementById('progress-fill').style.width = progressPercent + '%';
+        
         document.body.className = mode.toLowerCase();
     }
 
@@ -184,13 +246,6 @@
         paused = !paused; this.innerText = paused ? 'Resume' : 'Pause';
     };
     document.getElementById('skip_btn').onclick = () => { time = 0; };
-// Add this at the very bottom of your <script> section
-window.onload = () => {
-    const savedKey = localStorage.getItem('GEMINI_KEY');
-    if (savedKey) {
-        document.getElementById('apiKeyInput').value = savedKey;
-    }
-};
 </script>
 </body>
 </html>
