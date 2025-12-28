@@ -86,7 +86,7 @@
         {name: "Hips", exercises:[{n:"Lunge",d:30, t:"Stay tall."},{n:"Cossack",d:30, t:"Heavy heels."}]}
     ];
 
-    let cC = 0, cE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false, tipSpoken = false;
+    let cC = 0, cE = 0, mode = 'PREP', time = 20, total = 20, interval = null, paused = false, tipSpoken = false;
     const synth = window.speechSynthesis;
 
     function speak(t) { if(!t) return; synth.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = 1.0; synth.speak(m); }
@@ -98,7 +98,7 @@
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: "You are a peppy mobility coach. Give 1 sentence of poetic advice for a back/hip session. 20 words max." }]}] })
+                body: JSON.stringify({ contents: [{ parts: [{ text: "You are a peppy mobility coach. Give 1 sentence of poetic advice for the day. Consider the time of the week, day and year. 20 words max." }]}] })
             });
             const data = await res.json();
             return data.candidates[0].content.parts[0].text;
