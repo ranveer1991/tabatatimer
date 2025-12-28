@@ -145,12 +145,17 @@
         try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
     }
 
-    function speak(t) {
-        synth.cancel();
-        const m = new SpeechSynthesisUtterance(t);
-        m.rate = 1.0;
-        synth.speak(m);
-    }
+   function speak(t) {
+    synth.cancel();
+    const m = new SpeechSynthesisUtterance(t);
+    
+    // Adjusting these values can reduce the 'robotic' feel:
+    m.rate = 1.15;  // Slightly faster for a coaching feel
+    m.pitch = 1.1; // Slightly higher pitch for more 'energy'
+    m.volume = 1;  
+    
+    synth.speak(m);
+}
 
     function updateUI() {
         const ex = routine[currentC].exercises[currentE];
