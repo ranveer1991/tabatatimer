@@ -3,26 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Mobility Flow AI</title>
     <style>
-        :root { 
-            --w: #30d158; --a: #ff9f0a; --r: #ff453a; --p: #000; 
-            --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); 
-        }
+        :root { --w: #30d158; --a: #ff9f0a; --p: #000; --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
+        body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
-        
         #setup, #timer { position: fixed; inset: 0; padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 20px); display: flex; flex-direction: column; }
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
-        
-        .summary-card { background: #1c1c1e; border-radius: 20px; padding: 16px; margin: 15px 0; }
-        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #3a3a3c; }
-        .intention-box { background: rgba(255,255,255,0.05); border-left: 3px solid var(--w); padding: 12px; border-radius: 8px; font-style: italic; font-size: 14px; margin-bottom: 20px; display: none; }
-        
+        .summary-card { background: #1c1c1e; border-radius: 20px; padding: 16px; margin: 15px 0; border: 1px solid #333; }
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #333; }
         .ex-name { font-size: 32px; font-weight: 800; line-height: 1.2; min-height: 80px; display: flex; align-items: center; justify-content: center; }
         .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; }
@@ -30,17 +21,16 @@
         .bg-c { stroke: rgba(0,0,0,0.1); }
         .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
-        
-        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; }
+        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
         .start-btn { background: var(--w); color: #000; }
         .ctrls { display: flex; flex-direction: column; gap: 10px; width: 100%; }
-        .row-ctrls { display: flex; gap: 12px; width: 100%; }
+        .row-ctrls { display: flex; gap: 12px; }
         .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
         .skip-btn { background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.1); }
         .exit-btn { background: transparent; color: #8e8e93; font-size: 14px; }
-
         #api-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 40px 24px; flex-direction: column; gap: 20px; justify-content: center; }
-        .settings-btn { position: absolute; top: calc(var(--safe-top) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; z-index: 10; }
+        .settings-btn { position: absolute; top: calc(var(--safe-top) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; }
         input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 15px; border-radius: 12px; }
     </style>
 </head>
@@ -56,15 +46,13 @@
 
 <div id="setup">
     <h1 style="margin:0;">Mobility Flow</h1>
-    <p id="current-day" style="color:#8e8e93;">Session</p>
-    <div id="intention-card" class="intention-box"></div>
+    <p id="current-day" style="color:#8e8e93;">Sunday Reset</p>
     <div class="summary-card">
-        <div class="stat-row"><span>Cycle 1</span><strong>Back</strong></div>
-        <div class="stat-row"><span>Cycle 2</span><strong>Hips</strong></div>
-        <div class="stat-row"><span>Cycle 3</span><strong>Ankle</strong></div>
-        <div class="stat-row"><span>Cycle 4</span><strong>Core</strong></div>
+        <div class="stat-row"><span>Focus</span><strong>Back & Hips</strong></div>
+        <div class="stat-row"><span>Duration</span><strong>14 Mins</strong></div>
+        <div class="stat-row"><span>Intensity</span><strong>Fluid</strong></div>
     </div>
-    <button class="btn start-btn" id="startBtn">Start Workout</button>
+    <button class="btn start-btn" id="startBtn">Unlock & Start</button>
 </div>
 
 <div id="timer">
@@ -85,77 +73,67 @@
             <button id="p_btn" class="btn pause-btn">Pause</button>
             <button id="skip_btn" class="btn skip-btn">Skip</button>
         </div>
-        <button class="btn exit-btn" id="exitBtn">End Workout</button>
+        <button class="btn exit-btn" onclick="location.reload()">End Workout</button>
     </div>
 </div>
 
 <script>
+    // Simplified routine for testing; expand as needed
     const routine = [
-        {name: "Back", exercises:[
-            {n:"Cat-Cow",d:30, t:"Move one vertebrae at a time."},
-            {n:"Child to Sphinx",d:30, t:"Slink forward into a chest opener."},
-            {n:"Thread Needle (L)",d:15, t:"Reach under and breathe."},
-            {n:"Thread Needle (R)",d:15, t:"Keep your hips square."}
-        ]},
-        {name: "Hips", exercises:[
-            {n:"Walking Lunge",d:30, t:"Tall spine, feel the back hip unzip."},
-            {n:"Cossack Squat",d:30, t:"Keep your heels on the ground."},
-            {n:"Hip Flexor (L)",d:15, t:"Squeeze your glute to open the front."},
-            {n:"Hip Flexor (R)",d:15, t:"Stay upright."}
-        ]} // Simplified for example, add your full list here
+        {name: "Back", exercises:[{n:"Cat-Cow",d:30, t:"Move one vertebrae at a time."},{n:"Child to Sphinx",d:30, t:"Slink forward."}]},
+        {name: "Hips", exercises:[{n:"Walking Lunge",d:30, t:"Tall spine."},{n:"Cossack Squat",d:30, t:"Heels down."}]}
     ];
 
     let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
-    let wakeLock = null, guidanceIndices = [], tipSpoken = false;
+    let tipSpoken = false;
     const synth = window.speechSynthesis;
 
-    // AUDIO FIX: Force voices to load and prime the engine
     function speak(text) {
         if (!text) return;
         synth.cancel();
         const msg = new SpeechSynthesisUtterance(text);
-        msg.rate = 1.0; msg.pitch = 1.0; msg.volume = 1.0;
+        msg.rate = 1.1; msg.pitch = 1.0;
         synth.speak(msg);
     }
 
-    async function getAiAdvice() {
+    async function fetchAiAdvice() {
         const key = localStorage.getItem('GEMINI_KEY');
-        if (!key) return "Let's move with intention today.";
-        const now = new Date();
-        const day = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
+        if (!key) return "Let's find some flow today.";
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const day = days[new Date().getDay()];
+        
+        const prompt = `You are an eccentric, high-energy mobility coach. Today is ${day}. 
+        The user is starting a session for Back and Hips. 
+        Give 2 sentences of wildly interesting, peppy, and slightly poetic advice. 
+        Use a fun metaphor. Max 30 words.`;
+
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: `You are a coach. Today is ${day}. Give 1 peppy, brief mobility intention. Max 15 words.` }]}] })
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }]}] })
             });
             const data = await res.json();
             return data.candidates[0].content.parts[0].text;
-        } catch { return "Focus on your breath and flow."; }
+        } catch (e) { return "Move like water. Let the tension melt away."; }
     }
 
     document.getElementById('startBtn').addEventListener('click', async function() {
-        // AUDIO FIX: Prime the engine on the actual click event
-        const silent = new SpeechSynthesisUtterance("");
-        synth.speak(silent);
-
-        this.innerText = "Consulting AI...";
-        this.disabled = true;
-
-        const advice = await getAiAdvice();
+        // UI AND AUDIO UNLOCK (Immediate)
+        speak("Consulting the coach.");
         document.getElementById('gearIcon').style.display = 'none';
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
         
-        // Setup workout
-        currentC = 0; currentE = 0; mode = 'PREP'; time = total = 10;
+        // Start the timer immediately so buttons aren't frozen
         updateUI();
-        
-        // State AI Advice immediately during first prep
-        speak(advice);
-        
         interval = setInterval(tick, 1000);
-        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(()=>{});
+
+        // Fetch AI advice in the BACKGROUND
+        fetchAiAdvice().then(advice => {
+            speak(advice);
+        });
     });
 
     function tick() {
@@ -163,8 +141,6 @@
         if (time > 0) {
             time--;
             if (time <= 3 && time > 0) speak(time);
-            
-            // Random Tip Logic (2/3 mark)
             if (mode === 'WORK' && !tipSpoken && time === Math.floor(total/3)) {
                 speak(routine[currentC].exercises[currentE].t);
                 tipSpoken = true;
@@ -177,19 +153,17 @@
         if (mode === 'PREP') {
             mode = 'WORK';
             const ex = routine[currentC].exercises[currentE];
-            time = total = ex.d;
-            tipSpoken = false;
+            time = total = ex.d; tipSpoken = false;
             speak(ex.n); 
         } else {
             currentE++;
             if (currentE >= routine[currentC].exercises.length) { currentE = 0; currentC++; }
             if (currentC >= routine.length) { 
-                speak("Flow complete. Great work."); 
-                setTimeout(() => location.reload(), 3000);
-                return;
+                clearInterval(interval); speak("Session complete. You are a new person."); 
+                setTimeout(() => location.reload(), 3000); return; 
             }
             mode = 'PREP'; time = total = 8;
-            speak("Next: " + routine[currentC].exercises[currentE].n);
+            speak("Next up: " + routine[currentC].exercises[currentE].n);
         }
         updateUI();
     }
@@ -200,7 +174,7 @@
         document.getElementById('ex-title').innerText = ex.n;
         document.getElementById('phase').innerText = mode;
         document.getElementById('cycle-step').innerText = `Cycle ${currentC+1}/4: ${routine[currentC].name}`;
-        const offset = 816 - (816 * (time / total));
+        const offset = 816 - (816 * (time / (total || 1)));
         document.getElementById('prog').style.strokeDashoffset = offset;
         document.body.className = mode.toLowerCase();
     }
@@ -210,6 +184,9 @@
         localStorage.setItem('GEMINI_KEY', document.getElementById('apiKeyInput').value);
         document.getElementById('api-modal').style.display = 'none';
     }
+
+    document.getElementById('p_btn').onclick = () => { paused = !paused; document.getElementById('p_btn').innerText = paused ? 'Resume' : 'Pause'; };
+    document.getElementById('skip_btn').onclick = () => { time = 0; };
 </script>
 </body>
 </html>
