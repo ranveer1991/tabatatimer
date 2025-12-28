@@ -7,7 +7,7 @@
     <style>
         :root { --w: #30d158; --a: #ff9f0a; --p: #000; --st: env(safe-area-inset-top); --sb: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
+        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
         
@@ -15,12 +15,27 @@
         #progress-fill { height: 100%; width: 0%; background: var(--w); transition: width 0.5s ease; }
         body.prep #progress-fill { background: #fff; }
 
-        #setup, #timer { position: fixed; inset: 0; padding: calc(var(--st) + 20px) 24px calc(var(--sb) + 20px); display: flex; flex-direction: column; }
+        #setup, #timer { position: fixed; inset: 0; padding: calc(var(--st) + 40px) 24px calc(var(--sb) + 40px); display: flex; flex-direction: column; }
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
         
-        .card { background: #1c1c1e; border-radius: 20px; padding: 16px; margin: 15px 0; border: 1px solid #333; }
-        .row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 0.5px solid #333; }
+        /* Inspirational Setup Styling */
+        #setup { justify-content: center; text-align: center; }
+        .hero-title { font-size: 42px; font-weight: 800; letter-spacing: -2px; margin: 0; line-height: 1; }
+        .hero-sub { font-size: 16px; opacity: 0.6; margin: 10px 0 30px; font-style: italic; }
         
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.05); 
+            border-radius: 24px; 
+            padding: 24px; 
+            margin-bottom: 40px; 
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .stat-row { display: flex; justify-content: space-around; margin-top: 15px; }
+        .stat-item { display: flex; flex-direction: column; gap: 4px; }
+        .stat-val { font-size: 20px; font-weight: 700; color: var(--w); }
+        .stat-lab { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; }
+
         .ai-bubble { 
             background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; 
             font-size: 14px; font-style: italic; line-height: 1.4; margin-top: 10px;
@@ -35,11 +50,12 @@
         .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
         
-        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; }
-        .primary { background: var(--w); color: #000; }
+        .btn { padding: 20px; border-radius: 20px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; transition: transform 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        .primary { background: var(--w); color: #000; box-shadow: 0 10px 20px rgba(48, 209, 88, 0.2); }
         
         #api-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 40px 24px; flex-direction: column; gap: 10px; justify-content: center; }
-        .settings-btn { position: absolute; top: calc(var(--st) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.5; z-index: 101; }
+        .settings-btn { position: absolute; top: calc(var(--st) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.3; z-index: 101; }
         input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 18px; border-radius: 12px; font-size: 16px; width: 100%; }
     </style>
 </head>
@@ -55,12 +71,31 @@
 </div>
 
 <div id="setup">
-    <h1 style="margin:0; font-size: 34px; letter-spacing: -1px;">Daily Mobility Flow</h1>
-    <div class="card">
-        <div class="row"><span>Focus</span><strong>Full Body Flow</strong></div>
-        <div class="row"><span>Coach</span><strong>Gemini 3 Flash</strong></div>
+    <div style="margin-bottom: auto; margin-top: 40px;">
+        <h1 class="hero-title">Daily<br>Mobility Flow</h1>
+        <p class="hero-sub">Motion is lotion for the soul.</p>
     </div>
-    <button class="btn primary" id="startBtn">Begin Flow</button>
+
+    <div class="glass-card">
+        <div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; opacity: 0.8;">TODAY'S JOURNEY</div>
+        <div class="stat-row">
+            <div class="stat-item">
+                <span class="stat-val">12m</span>
+                <span class="stat-lab">Duration</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-val">32</span>
+                <span class="stat-lab">Moves</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-val">4</span>
+                <span class="stat-lab">Cycles</span>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn primary" id="startBtn">Begin Practice</button>
+    <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">Guided by Gemini 3 Flash</p>
 </div>
 
 <div id="timer">
@@ -144,7 +179,7 @@
 
     async function fetchAiAdvice() {
         const key = localStorage.getItem('GEMINI_KEY');
-        if (!key) return "Let's focus on deep, fluid movement today.";
+        if (!key) return "Focus on deep, fluid movement today.";
         const now = new Date();
         const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -167,7 +202,7 @@
         synth.speak(new SpeechSynthesisUtterance("")); 
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
-        speak("Starting " + routine[cC].name + " Cycle"); // Initial announcement
+        speak("Starting " + routine[cC].name + " Cycle");
         updateUI();
         interval = setInterval(() => {
             if (paused) return;
@@ -196,24 +231,11 @@
             exercisesCompleted++; 
             cE++; 
             let cycleTransition = false;
-            
-            if (cE >= routine[cC].exercises.length) { 
-                cE = 0; 
-                cC++; 
-                cycleTransition = true;
-            }
-            
+            if (cE >= routine[cC].exercises.length) { cE = 0; cC++; cycleTransition = true; }
             if (cC >= routine.length) { location.reload(); return; }
-            
             mode = 'PREP'; 
-            // Double the time if we changed cycles
             time = total = cycleTransition ? 16 : 8; 
-            
-            if (cycleTransition) {
-                speak("Next Cycle: " + routine[cC].name);
-            } else {
-                speak("Next: " + routine[cC].exercises[cE].n);
-            }
+            if (cycleTransition) { speak("Next Cycle: " + routine[cC].name); } else { speak("Next: " + routine[cC].exercises[cE].n); }
         }
         updateUI();
     }
@@ -225,10 +247,8 @@
         document.getElementById('phase').innerText = mode;
         document.getElementById('cycle-label').innerText = `CYCLE ${cC + 1}/4: ${routine[cC].name.toUpperCase()}`;
         document.getElementById('prog').style.strokeDashoffset = 816 - (816 * (time / total));
-        
         const progressPercent = (exercisesCompleted / totalExercises) * 100;
         document.getElementById('progress-fill').style.width = progressPercent + '%';
-        
         document.body.className = mode.toLowerCase();
     }
 
