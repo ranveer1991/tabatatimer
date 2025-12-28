@@ -18,7 +18,6 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s, color 0.4s; }
         
-        /* State-based backgrounds */
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
         
@@ -43,16 +42,20 @@
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
         .next-card { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 15px; width: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
         
-        /* Dark text for light backgrounds (Prep/Work) */
         .work .next-card, .prep .next-card { background: rgba(0,0,0,0.1); }
 
-        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; }
+        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; }
         .start-btn { background: var(--w); color: #000; }
-        .ctrls { display: flex; gap: 12px; width: 100%; }
+        .ctrls { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        .row-ctrls { display: flex; gap: 12px; width: 100%; }
+        
         .pause-btn { background: rgba(255,255,255,0.2); color: #fff; flex: 2; }
+        .skip-btn { background: rgba(255,255,255,0.1); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.1); }
         .work .pause-btn, .prep .pause-btn { background: rgba(0,0,0,0.1); color: #000; border: 1px solid rgba(0,0,0,0.1); }
-        .exit-btn { background: rgba(0,0,0,0.2); color: #fff; flex: 1; border: 1px solid rgba(255,255,255,0.2); }
-        .work .exit-btn, .prep .exit-btn { color: #000; border-color: rgba(0,0,0,0.2); }
+        .work .skip-btn, .prep .skip-btn { background: rgba(0,0,0,0.05); color: #000; border: 1px solid rgba(0,0,0,0.1); }
+        
+        .exit-btn { background: transparent; color: #8e8e93; font-size: 14px; padding: 10px; }
+        .work .exit-btn, .prep .exit-btn { color: rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
@@ -90,8 +93,11 @@
     </div>
 
     <div class="ctrls">
-        <button class="btn exit-btn" onclick="location.reload()">Exit</button>
-        <button id="p_btn" class="btn pause-btn">Pause</button>
+        <div class="row-ctrls">
+            <button id="p_btn" class="btn pause-btn">Pause</button>
+            <button id="skip_btn" class="btn skip-btn">Skip</button>
+        </div>
+        <button class="btn exit-btn" id="exitBtn">End Workout</button>
     </div>
 </div>
 
@@ -104,7 +110,19 @@
     ];
 
     let currentC = 0, currentE = 0, mode = 'PREP', time = 10, total = 10, interval = null, paused = false;
+    let wakeLock = null;
     const synth = window.speechSynthesis;
+
+    // --- Screen Wake Lock ---
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+            }
+        } catch (err) {
+            console.error(`${err.name}, ${err.message}`);
+        }
+    }
 
     function speak(t) {
         synth.cancel();
@@ -122,21 +140,13 @@
         document.getElementById('phase').innerText = mode === 'PREP' ? 'Prepare' : 'Go';
         document.getElementById('cycle-step').innerText = `Cycle ${currentC + 1}/4: ${routine[currentC].name}`;
         
-        // Show what's coming after the current action
         document.getElementById('next-ex-name').innerText = next ? next.n : 'Finish';
         document.getElementById('next-label-text').innerText = mode === 'PREP' ? 'Then...' : 'Next Position';
 
         const offset = 816 - (816 * (time / total));
-        document.getElementById('prog').style.strokeDashoffset = offset;
+        document.getElementById('prog').style.strokeDashoffset = isNaN(offset) ? 0 : offset;
         
-        // Background color logic
-        if (mode === 'WORK') {
-            document.body.className = 'work';
-        } else if (mode === 'PREP') {
-            document.body.className = 'prep';
-        } else {
-            document.body.className = '';
-        }
+        document.body.className = mode === 'WORK' ? 'work' : 'prep';
     }
 
     function tick() {
@@ -164,20 +174,28 @@
             }
             
             if (currentC >= routine.length) {
-                clearInterval(interval);
-                speak("Workout Complete");
-                setTimeout(() => location.reload(), 2000);
+                completeWorkout();
                 return;
             }
             
             mode = 'PREP';
-            time = total = 8; // 8 seconds to switch positions
+            time = total = 8;
             speak("Next up: " + routine[currentC].exercises[currentE].n);
         }
         updateUI();
     }
 
+    function completeWorkout() {
+        clearInterval(interval);
+        if (wakeLock) wakeLock.release().then(() => wakeLock = null);
+        speak("Workout Complete");
+        setTimeout(() => location.reload(), 2000);
+    }
+
+    // --- Event Listeners ---
+
     document.getElementById('startBtn').addEventListener('click', function() {
+        requestWakeLock(); // Prevent screen sleep
         const m = new SpeechSynthesisUtterance('');
         synth.speak(m);
         
@@ -194,6 +212,27 @@
     document.getElementById('p_btn').addEventListener('click', function() {
         paused = !paused;
         this.innerText = paused ? 'Resume' : 'Pause';
+    });
+
+    document.getElementById('skip_btn').addEventListener('click', function() {
+        // Skip current action and go to the next logic gate
+        time = 0;
+        nextStep();
+    });
+
+    document.getElementById('exitBtn').addEventListener('click', function() {
+        const confirmExit = confirm("Stop workout and return to start?");
+        if (confirmExit) {
+            if (wakeLock) wakeLock.release();
+            location.reload();
+        }
+    });
+
+    // Re-request wake lock if user leaves and returns to tab
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestWakeLock();
+        }
     });
 </script>
 </body>
