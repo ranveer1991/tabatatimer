@@ -2,80 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Mobility Gemma Local</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gemma 3 Mobility</title>
     <style>
-        :root { --w: #30d158; --a: #ff9f0a; }
-        body { margin: 0; font-family: -apple-system, sans-serif; background: #000; color: #fff; height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #setup, #timer { padding: 20px; width: 100%; max-width: 400px; text-align: center; }
-        #timer { display: none; }
-        .progress-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; margin: 20px 0; overflow: hidden; }
-        #fill { height: 100%; background: var(--w); width: 0%; transition: width 0.3s; }
-        .btn { padding: 20px; border-radius: 12px; border: none; font-weight: bold; width: 100%; cursor: pointer; background: var(--w); color: #000; font-size: 18px; }
-        .ai-tip { font-style: italic; color: #8e8e93; margin-top: 20px; min-height: 50px; padding: 10px; border-radius: 8px; background: #1c1c1e; }
+        :root { --w: #30d158; --a: #ff9f0a; --bg: #000; --card: #1c1c1e; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: #fff; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        #setup, #timer { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; }
+        #timer { display: none; justify-content: space-between; }
+
+        /* UI Elements */
+        .status-card { background: var(--card); padding: 24px; border-radius: 24px; width: 100%; box-sizing: border-box; }
+        .progress-container { width: 100%; height: 6px; background: #333; border-radius: 3px; margin: 20px 0; overflow: hidden; }
+        #progress-fill { height: 100%; background: var(--w); width: 0%; transition: width 0.3s ease; }
+        
+        .btn { padding: 18px; border-radius: 16px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; transition: opacity 0.2s; }
+        .primary { background: var(--w); color: #000; }
+        .primary:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .ai-bubble { font-style: italic; font-size: 15px; color: #a1a1a6; margin-top: 15px; line-height: 1.4; min-height: 44px; }
+        .time-display { font-size: 100px; font-weight: 200; font-variant-numeric: tabular-nums; margin: 20px 0; }
+        .ex-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
 <div id="setup">
-    <h1>Gemma 3 Coach</h1>
-    <p>Preparing the 270M local model...</p>
-    <div class="progress-bar"><div id="fill"></div></div>
-    <p id="status" style="font-size: 12px; color: #666;">Waiting to start...</p>
-    <button class="btn" id="startBtn" disabled>Initialize Coach</button>
+    <div class="status-card">
+        <h1 style="margin:0 0 8px 0;">Gemma 3 Coach</h1>
+        <p id="status-msg" style="color:#8e8e93; font-size: 14px;">Checking hardware compatibility...</p>
+        
+        <div class="progress-container">
+            <div id="progress-fill"></div>
+        </div>
+        
+        <button id="startBtn" class="btn primary" disabled>Initialize 270M Model</button>
+        <p style="font-size: 11px; color: #555; margin-top: 12px;">Requires Safari with WebGPU enabled.</p>
+    </div>
 </div>
 
 <div id="timer">
-    <h2 id="ex-name">Ready</h2>
-    <div style="font-size: 80px; margin: 20px 0;" id="countdown">10</div>
-    <div class="ai-tip" id="ai-advice">Gemma is thinking...</div>
+    <div>
+        <div id="phase-label" style="text-transform: uppercase; font-size: 12px; font-weight: 700; color: var(--a); letter-spacing: 1px;">Prepare</div>
+        <div id="ex-display" class="ex-title">Ready?</div>
+        <div id="ai-advice" class="ai-bubble">Gemma is waking up...</div>
+    </div>
+
+    <div class="time-display" id="clock">10</div>
+
+    <div style="width:100%">
+        <button id="pauseBtn" class="btn" style="background: #2c2c2e; color: #fff;">Pause Session</button>
+    </div>
 </div>
 
 <script type="module">
     import * as webllm from "https://esm.run/@mlc-ai/web-llm";
 
-    let engine;
-    const modelId = "gemma-3-270m-it-q4f16_1-MLC"; // The specific 270M local build
+    // 1. Explicit Model Registration for Safari
+    const appConfig = {
+        model_list: [{
+            model: "https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC",
+            model_id: "gemma-3-270m-it-MLC",
+            model_lib: "https://huggingface.co/llinguini/gemma-3-270m-it-q4f16_1-MLC/resolve/main/libs/gemma-3-270m-it-webgpu.wasm"
+        }]
+    };
 
-    async function initGemma() {
-        document.getElementById('startBtn').disabled = true;
-        
+    let engine;
+    let time = 10;
+    let isPaused = false;
+    const statusMsg = document.getElementById('status-msg');
+    const startBtn = document.getElementById('startBtn');
+
+    // 2. Hardware Verification
+    async function checkWebGPU() {
+        if (!navigator.gpu) {
+            statusMsg.innerText = "WebGPU not found. Check Safari Settings > Advanced > Feature Flags.";
+            statusMsg.style.color = "#ff453a";
+            return;
+        }
+        statusMsg.innerText = "Hardware Ready. Tap to download coach.";
+        startBtn.disabled = false;
+    }
+
+    // 3. Model Initialization
+    async function loadModel() {
+        startBtn.disabled = true;
         try {
-            engine = await webllm.CreateMLCEngine(modelId, {
+            engine = await webllm.CreateMLCEngine("gemma-3-270m-it-MLC", {
+                appConfig,
                 initProgressCallback: (report) => {
                     const p = Math.floor(report.progress * 100);
-                    document.getElementById('fill').style.width = p + "%";
-                    document.getElementById('status').innerText = report.text;
-                    if (p === 100) document.getElementById('startBtn').disabled = false;
+                    document.getElementById('progress-fill').style.width = p + "%";
+                    statusMsg.innerText = `Loading: ${p}%`;
+                    if (p === 100) {
+                        startBtn.disabled = false;
+                        startBtn.innerText = "Start Workout";
+                        startBtn.onclick = beginSession;
+                    }
                 }
             });
-            
-            document.getElementById('startBtn').innerText = "Begin Workout";
-            document.getElementById('startBtn').onclick = startWorkout;
-        } catch (e) {
-            document.getElementById('status').innerText = "WebGPU Error: Use Safari on iOS 17+";
+        } catch (err) {
+            statusMsg.innerText = "Error: " + err.message;
         }
     }
 
-    async function getGemmaAdvice() {
-        const now = new Date();
-        const day = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][now.getDay()];
-        const prompt = `It's ${day}. You are a poetic mobility coach. Give 1 sentence of advice for back health. Max 15 words.`;
+    // 4. AI Generation
+    async function generateAdvice() {
+        const day = new Intl.DateTimeFormat('en-US', {weekday: 'long'}).format(new Date());
+        const prompt = `It is ${day}. You are a poetic mobility coach. Give 1 sentence of advice for hip/back health. Max 12 words.`;
         
-        const reply = await engine.chat.completions.create({
-            messages: [{ role: "user", content: prompt }]
+        const response = await engine.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7
         });
-        document.getElementById('ai-advice').innerText = reply.choices[0].message.content;
+        document.getElementById('ai-advice').innerText = response.choices[0].message.content;
     }
 
-    function startWorkout() {
+    // 5. App Logic
+    function beginSession() {
         document.getElementById('setup').style.display = 'none';
-        document.getElementById('timer').style.display = 'block';
-        getGemmaAdvice();
-        // Standard timer logic goes here...
+        document.getElementById('timer').style.display = 'flex';
+        
+        generateAdvice();
+        
+        setInterval(() => {
+            if (!isPaused && time > 0) {
+                time--;
+                document.getElementById('clock').innerText = time;
+                if (time === 0) { /* Cycle through exercises here */ }
+            }
+        }, 1000);
     }
 
-    window.onload = initGemma;
+    startBtn.onclick = loadModel;
+    document.getElementById('pauseBtn').onclick = () => {
+        isPaused = !isPaused;
+        document.getElementById('pauseBtn').innerText = isPaused ? "Resume" : "Pause Session";
+    };
+
+    checkWebGPU();
 </script>
 </body>
 </html>
