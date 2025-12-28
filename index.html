@@ -190,12 +190,12 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ 
-                    text: `Context: ${timeContext} Role: Peppy mobility coach. Task: Give 1 sentence of poetic advice for a full body session. Mention the specific day or time. Constraint: 25 words max.` 
+                    text: `Context: ${timeContext} Role: Peppy mobility coach. Task: Give 1 sentence of poetic advice for a full body session. Mention the specific day or time. Constraint: 15 words max.` 
                 }]}] })
             });
             const data = await res.json();
             return data.candidates[0].content.parts[0].text;
-        } catch (e) { return "API Broken - Let your spine be a liquid ribbon as you start your session."; }
+        } catch (e) { return "Let your spine be a liquid ribbon as you start your session."; }
     }
 
     document.getElementById('startBtn').onclick = () => {
