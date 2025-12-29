@@ -72,7 +72,7 @@
 
 <div id="setup">
     <div style="margin-bottom: auto; margin-top: 40px;">
-        <h1 class="hero-title">Daily<br>Mobility Flow</h1>
+        <h1 class="hero-title">Daily<br>Mobility Flows</h1>
         <p class="hero-sub">Motion is lotion for the soul.</p>
     </div>
 
@@ -190,7 +190,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ 
-                    text: `Context: ${timeContext} Role: Peppy mobility coach. Task: Give 1 sentence of poetic advice for a full body session. Mention the specific day or time. Constraint: 15 words max.` 
+                    text: `Context: ${timeContext} Role: Peppy mobility coach. Task: Give 1 sentence of poetic advice for a full body session incorporating day / date / evening / morning etc. like a coach would before class begins. Constraint: 15 words max.` 
                 }]}] })
             });
             const data = await res.json();
