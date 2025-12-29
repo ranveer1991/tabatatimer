@@ -18,7 +18,6 @@
         #setup, #timer { position: fixed; inset: 0; padding: calc(var(--st) + 40px) 24px calc(var(--sb) + 40px); display: flex; flex-direction: column; }
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
         
-        /* Inspirational Setup Styling */
         #setup { justify-content: center; text-align: center; }
         .hero-title { font-size: 42px; font-weight: 800; letter-spacing: -2px; margin: 0; line-height: 1; }
         .hero-sub { font-size: 16px; opacity: 0.6; margin: 10px 0 30px; font-style: italic; }
@@ -170,7 +169,17 @@
     let cC = 0, cE = 0, mode = 'PREP', time = 20, total = 20, interval = null, paused = false, tipSpoken = false;
     const synth = window.speechSynthesis;
 
-    function speak(t) { if(!t) return; synth.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = 1.0; synth.speak(m); }
+    // Modified speak function to return a Promise
+    function speak(t) { 
+        return new Promise((resolve) => {
+            if(!t) { resolve(); return; }
+            synth.cancel(); 
+            const m = new SpeechSynthesisUtterance(t); 
+            m.rate = 1.0; 
+            m.onend = () => resolve(); // Resolve when talking finishes
+            synth.speak(m); 
+        });
+    }
 
     window.onload = () => {
         const savedKey = localStorage.getItem('GEMINI_KEY');
@@ -186,7 +195,7 @@
         const timeContext = `Today is ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, and the current time is ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ 
@@ -199,10 +208,22 @@
     }
 
     document.getElementById('startBtn').onclick = () => {
+        // Initial silent speak to unlock iOS audio if needed
         synth.speak(new SpeechSynthesisUtterance("")); 
+        
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
-        speak("Starting " + routine[cC].name + " Cycle");
+        
+        // Use the Promise from speak() to sequence the AI advice
+        speak("Starting " + routine[cC].name + " Cycle").then(() => {
+            fetchAiAdvice().then(a => {
+                const b = document.getElementById('ai-advice-bubble');
+                b.innerText = a; 
+                b.style.display = 'block'; 
+                speak(a);
+            });
+        });
+
         updateUI();
         interval = setInterval(() => {
             if (paused) return;
@@ -216,10 +237,6 @@
                 updateUI();
             } else { nextStep(); }
         }, 1000);
-        fetchAiAdvice().then(a => {
-            const b = document.getElementById('ai-advice-bubble');
-            b.innerText = a; b.style.display = 'block'; speak(a);
-        });
     };
 
     function nextStep() {
