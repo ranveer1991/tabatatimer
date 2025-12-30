@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Mobility Flow</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mobility">
+    
     <style>
         :root { --w: #30d158; --a: #ff9f0a; --p: #000; --st: env(safe-area-inset-top); --sb: env(safe-area-inset-bottom); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -94,7 +99,7 @@
     </div>
 
     <button class="btn primary" id="startBtn">Begin Practice</button>
-    <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">Guided by Geminis</p>
+    <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">Guided by Gemini</p>
 </div>
 
 <div id="timer">
@@ -167,16 +172,36 @@
     const totalExercises = routine.reduce((sum, cycle) => sum + cycle.exercises.length, 0);
     let exercisesCompleted = 0;
     let cC = 0, cE = 0, mode = 'PREP', time = 20, total = 20, interval = null, paused = false, tipSpoken = false;
+    let wakeLock = null;
     const synth = window.speechSynthesis;
 
-    // Modified speak function to return a Promise
+    // Wake Lock Implementation
+    async function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => { console.log('Wake Lock released'); });
+                console.log('Wake Lock active');
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+    }
+
+    // Re-acquire lock when app returns to focus
+    document.addEventListener('visibilitychange', async () => {
+        if (wakeLock !== null && document.visibilityState === 'visible') {
+            await requestWakeLock();
+        }
+    });
+
     function speak(t) { 
         return new Promise((resolve) => {
             if(!t) { resolve(); return; }
             synth.cancel(); 
             const m = new SpeechSynthesisUtterance(t); 
             m.rate = 1.0; 
-            m.onend = () => resolve(); // Resolve when talking finishes
+            m.onend = () => resolve();
             synth.speak(m); 
         });
     }
@@ -195,7 +220,7 @@
         const timeContext = `Today is ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, and the current time is ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
 
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`, {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ 
@@ -208,13 +233,14 @@
     }
 
     document.getElementById('startBtn').onclick = () => {
-        // Initial silent speak to unlock iOS audio if needed
+        // Request Wake Lock on user interaction
+        requestWakeLock();
+        
         synth.speak(new SpeechSynthesisUtterance("")); 
         
         document.getElementById('setup').style.display = 'none';
         document.getElementById('timer').style.display = 'flex';
         
-        // Use the Promise from speak() to sequence the AI advice
         speak("Starting " + routine[cC].name + " Cycle").then(() => {
             fetchAiAdvice().then(a => {
                 const b = document.getElementById('ai-advice-bubble');
