@@ -133,7 +133,7 @@
     <!-- =================================== -->
     <div id="setup">
         <div style="margin-bottom: auto; margin-top: 40px;">
-            <h1 class="hero-title">Daily<br>Mobility Flows</h1>
+            <h1 class="hero-title">Daily<br>Mobility Flow</h1>
             <p class="hero-sub">Motion is lotion for the soul.</p>
         </div>
         <div class="glass-card">
@@ -154,7 +154,7 @@
             </div>
         </div>
         <button class="btn primary" id="startBtn">Begin Practice</button>
-        <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">Guided by Gemini</p>
+        <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">Guided by Ranveer</p>
     </div>
 
     <!-- =================================== -->
@@ -246,12 +246,12 @@
         /* =================================== */
         /* 2. CALCULATE TOTAL SESSION TIME */
         /* Includes:
-           - Initial 20s prep
+           - Initial 15s prep
            - Every exercise duration
            - 8s prep between exercises in the same cycle
-           - 16s prep when moving to a new cycle */
+           - 10s prep when moving to a new cycle */
         /* =================================== */
-        let totalSessionTime = 20; // initial prep
+        let totalSessionTime = 15; // initial prep
         routine.forEach((cycle, i) => {
             cycle.exercises.forEach((ex, j) => {
                 totalSessionTime += ex.d;               // exercise time
@@ -260,7 +260,7 @@
                 }
             });
             if (i < routine.length - 1) {               // longer prep when starting new cycle
-                totalSessionTime += 16;
+                totalSessionTime += 10;
             }
         });
 
@@ -377,7 +377,7 @@
                     return;
                 }
                 mode = 'PREP';
-                time = total = (cE === 0) ? 16 : 8;
+                time = total = (cE === 0) ? 15 : 10;
                 if (cE === 0) {
                     speak("Next Cycle: " + routine[cC].name);
                 } else {
