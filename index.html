@@ -1,37 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- =================================== -->
+    <!-- META TAGS & BASIC SETUP -->
+    <!-- =================================== -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Daily Mobility Flow</title>
-    
+   
+    <!-- Makes this page work as a full-screen PWA on iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mobility">
-    
+   
+    <!-- =================================== -->
+    <!-- CSS STYLES -->
+    <!-- =================================== -->
     <style>
-        :root { --w: #30d158; --a: #ff9f0a; --p: #000; --st: env(safe-area-inset-top); --sb: env(safe-area-inset-bottom); }
+        :root { 
+            --w: #30d158;      /* Green for WORK mode */
+            --a: #ff9f0a;      /* Orange for PREP mode */
+            --p: #000; 
+            --st: env(safe-area-inset-top); 
+            --sb: env(safe-area-inset-bottom); 
+        }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: #000; color: #fff; height: 100dvh; overflow: hidden; transition: background 0.4s; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, system-ui, sans-serif; 
+            background: #000; 
+            color: #fff; 
+            height: 100dvh; 
+            overflow: hidden; 
+            transition: background 0.4s; 
+        }
         body.work { background: var(--w); color: #000; }
         body.prep { background: var(--a); color: #000; }
-        
-        #progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: rgba(255,255,255,0.1); z-index: 1000; }
-        #progress-fill { height: 100%; width: 0%; background: var(--w); transition: width 0.5s ease; }
-        body.prep #progress-fill { background: #fff; }
-
-        #setup, #timer { position: fixed; inset: 0; padding: calc(var(--st) + 40px) 24px calc(var(--sb) + 40px); display: flex; flex-direction: column; }
+       
+        /* Layout containers */
+        #setup, #timer, #complete { 
+            position: fixed; inset: 0; 
+            padding: calc(var(--st) + 40px) 24px calc(var(--sb) + 40px); 
+            display: flex; flex-direction: column; 
+        }
         #timer { display: none; align-items: center; text-align: center; justify-content: space-between; }
-        
+        #complete { display: none; align-items: center; justify-content: center; text-align: center; }
+       
         #setup { justify-content: center; text-align: center; }
+
+        /* Hero text on setup screen */
         .hero-title { font-size: 42px; font-weight: 800; letter-spacing: -2px; margin: 0; line-height: 1; }
         .hero-sub { font-size: 16px; opacity: 0.6; margin: 10px 0 30px; font-style: italic; }
-        
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.05); 
-            border-radius: 24px; 
-            padding: 24px; 
-            margin-bottom: 40px; 
+       
+        /* Glass card on setup screen (shows stats) */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 40px;
             border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
         }
@@ -40,275 +66,406 @@
         .stat-val { font-size: 20px; font-weight: 700; color: var(--w); }
         .stat-lab { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; }
 
-        .ai-bubble { 
-            background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; 
+        /* AI advice bubble (appears at start of session) */
+        .ai-bubble {
+            background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px;
             font-size: 14px; font-style: italic; line-height: 1.4; margin-top: 10px;
             display: none; backdrop-filter: blur(5px);
         }
 
+        /* Exercise name display */
         .ex-name { font-size: 32px; font-weight: 800; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+
+        /* Circular progress ring */
         .ring { position: relative; width: 280px; height: 280px; display: flex; align-items: center; justify-content: center; }
         svg { transform: rotate(-90deg); width: 100%; height: 100%; position: absolute; }
         circle { fill: none; stroke-width: 10; stroke-linecap: round; }
         .bg-c { stroke: rgba(0,0,0,0.1); }
         .prog-c { stroke: currentColor; stroke-dasharray: 816; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
         .time { font-size: 80px; font-weight: 200; font-variant-numeric: tabular-nums; }
-        
+
+        /* Remaining session time (big bold pill) */
+        #total-time-left {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 16px;
+            margin-top: 12px;
+            display: inline-block;
+            backdrop-filter: blur(8px);
+        }
+       
+        /* Buttons */
         .btn { padding: 20px; border-radius: 20px; font-size: 18px; font-weight: 700; border: none; width: 100%; cursor: pointer; transition: transform 0.2s; }
         .btn:active { transform: scale(0.98); }
         .primary { background: var(--w); color: #000; box-shadow: 0 10px 20px rgba(48, 209, 88, 0.2); }
-        
+       
+        /* API key modal */
         #api-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; padding: 40px 24px; flex-direction: column; gap: 10px; justify-content: center; }
         .settings-btn { position: absolute; top: calc(var(--st) + 10px); right: 20px; background: none; border: none; font-size: 24px; opacity: 0.3; z-index: 101; }
         input { background: #1c1c1e; border: 1px solid #3a3a3c; color: #fff; padding: 18px; border-radius: 12px; font-size: 16px; width: 100%; }
+
+        /* Completion screen */
+        .complete-title { font-size: 48px; font-weight: 800; letter-spacing: -2px; margin-bottom: 20px; }
+        .complete-msg { font-size: 20px; opacity: 0.8; margin-bottom: 40px; line-height: 1.5; }
+        .confetti { font-size: 60px; line-height: 1; margin-bottom: 20px; }
     </style>
 </head>
 <body>
+    <!-- =================================== -->
+    <!-- SETTINGS BUTTON (top-right gear) -->
+    <!-- =================================== -->
+    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
 
-<div id="progress-container"><div id="progress-fill"></div></div>
-<button class="settings-btn" onclick="toggleSettings()">⚙️</button>
-
-<div id="api-modal">
-    <h2 style="margin:0">API Settings</h2>
-    <input type="password" id="apiKeyInput" placeholder="Enter Gemini Key">
-    <button class="btn primary" onclick="saveKey()">Save & Continue</button>
-</div>
-
-<div id="setup">
-    <div style="margin-bottom: auto; margin-top: 40px;">
-        <h1 class="hero-title">Daily<br>Mobility Flows</h1>
-        <p class="hero-sub">Motion is lotion for the soul.</p>
+    <!-- =================================== -->
+    <!-- API KEY MODAL (hidden until gear is tapped) -->
+    <!-- =================================== -->
+    <div id="api-modal">
+        <h2 style="margin:0">API Settings</h2>
+        <input type="password" id="apiKeyInput" placeholder="Enter Gemini Key">
+        <button class="btn primary" onclick="saveKey()">Save & Continue</button>
     </div>
 
-    <div class="glass-card">
-        <div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; opacity: 0.8;">TODAY'S JOURNEY</div>
-        <div class="stat-row">
-            <div class="stat-item">
-                <span class="stat-val">12m</span>
-                <span class="stat-lab">Duration</span>
+    <!-- =================================== -->
+    <!-- SETUP / WELCOME SCREEN -->
+    <!-- =================================== -->
+    <div id="setup">
+        <div style="margin-bottom: auto; margin-top: 40px;">
+            <h1 class="hero-title">Daily<br>Mobility Flows</h1>
+            <p class="hero-sub">Motion is lotion for the soul.</p>
+        </div>
+        <div class="glass-card">
+            <div style="font-size: 14px; font-weight: 600; letter-spacing: 1px; opacity: 0.8;">TODAY'S JOURNEY</div>
+            <div class="stat-row">
+                <div class="stat-item">
+                    <span class="stat-val">14m</span>
+                    <span class="stat-lab">Duration</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val">29</span>
+                    <span class="stat-lab">Moves</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val">4</span>
+                    <span class="stat-lab">Cycles</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-val">32</span>
-                <span class="stat-lab">Moves</span>
+        </div>
+        <button class="btn primary" id="startBtn">Begin Practice</button>
+        <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">Guided by Gemini</p>
+    </div>
+
+    <!-- =================================== -->
+    <!-- TIMER SCREEN (main workout view) -->
+    <!-- =================================== -->
+    <div id="timer">
+        <div>
+            <div id="cycle-label" style="font-size:10px; color:rgba(255,255,255,0.5); margin-bottom:4px; font-weight:bold;">CYCLE 1/4</div>
+            <div id="phase" style="font-size:12px; letter-spacing:2px; font-weight:800; opacity:0.6; text-transform:uppercase">Prepare</div>
+            <div id="ex-title" class="ex-name">Ready</div>
+            <div id="total-time-left">14:18</div>
+            <div id="ai-advice-bubble" class="ai-bubble"></div>
+        </div>
+        <div class="ring">
+            <svg viewBox="0 0 300 300">
+                <circle class="bg-c" cx="150" cy="150" r="130"></circle>
+                <circle id="prog" class="prog-c" cx="150" cy="150" r="130"></circle>
+            </svg>
+            <div id="time" class="time">20</div>
+        </div>
+        <div style="width:100%">
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button id="p_btn" class="btn" style="background:rgba(255,255,255,0.2); color:#fff; flex:2;">Pause</button>
+                <button id="skip_btn" class="btn" style="background:rgba(255,255,255,0.1); color:#fff; flex:1;">Skip</button>
             </div>
-            <div class="stat-item">
-                <span class="stat-val">4</span>
-                <span class="stat-lab">Cycles</span>
-            </div>
+            <button class="btn" style="background:transparent; color:#8e8e93; font-size:14px;" onclick="location.reload()">End Session</button>
         </div>
     </div>
 
-    <button class="btn primary" id="startBtn">Begin Practice</button>
-    <p style="font-size: 12px; opacity: 0.4; margin-top: 20px;">Guided by Gemini</p>
-</div>
-
-<div id="timer">
-    <div>
-        <div id="cycle-label" style="font-size:10px; color:rgba(255,255,255,0.5); margin-bottom:4px; font-weight:bold;">CYCLE 1/4</div>
-        <div id="phase" style="font-size:12px; letter-spacing:2px; font-weight:800; opacity:0.6; text-transform:uppercase">Prepare</div>
-        <div id="ex-title" class="ex-name">Ready</div>
-        <div id="ai-advice-bubble" class="ai-bubble"></div>
-    </div>
-    <div class="ring">
-        <svg viewBox="0 0 300 300">
-            <circle class="bg-c" cx="150" cy="150" r="130"></circle>
-            <circle id="prog" class="prog-c" cx="150" cy="150" r="130"></circle>
-        </svg>
-        <div id="time" class="time">10</div>
-    </div>
-    <div style="width:100%">
-        <div style="display:flex; gap:10px; margin-bottom:10px;">
-            <button id="p_btn" class="btn" style="background:rgba(255,255,255,0.2); color:#fff; flex:2;">Pause</button>
-            <button id="skip_btn" class="btn" style="background:rgba(255,255,255,0.1); color:#fff; flex:1;">Skip</button>
+    <!-- =================================== -->
+    <!-- COMPLETION SCREEN -->
+    <!-- =================================== -->
+    <div id="complete">
+        <div>
+            <div class="confetti">🎉</div>
+            <h1 class="complete-title">Complete!</h1>
+            <p class="complete-msg">You've finished today's mobility flow.<br>Your body thanks you.</p>
+            <button class="btn primary" onclick="location.reload()">Do It Again</button>
         </div>
-        <button class="btn" style="background:transparent; color:#8e8e93; font-size:14px;" onclick="location.reload()">End Session</button>
     </div>
-</div>
 
-<script>
-    const routine = [
-        { name: "Back", exercises:[
-            {n:"Cat-Cow", d:30, t:"Flow it: Think string of pearls—move one vertebrae at a time."},
-            {n:"Child to Sphinx", d:30, t:"The Melt: Slink forward from a ball into a proud chest opener."},
-            {n:"Pelvic Tilts", d:30, t:"The Tuck: Just tilt the bowl of your pelvis; keep the legs quiet."},
-            {n:"Thread Needle (L)", d:15, t:"Reach: Reach under like you're grabbing a lost remote."},
-            {n:"Thread Needle (R)", d:15, t:"Reach: Hips square, let the twist happen in your mid-back."},
-            {n:"Tug Knee (L)", d:15, t:"Hug: Pull your knee toward your armpit to reset the lower back."},
-            {n:"Tug Knee (R)", d:15, t:"Hug: Gentle decompression. Feel the hip crease compress."},
-            {n:"Crossover Twist (L)", d:15, t:"Pin it: Keep the opposite shoulder glued to the floor."},
-            {n:"Crossover Twist (R)", d:15, t:"Spiral: Breathe into your ribs; feel the side-body release."}
-        ]},
-        { name: "Hips", exercises:[
-            {n:"Walking Lunge", d:30, t:"Tall Spine: Don't lean! Feel the back hip unzip as you step."},
-            {n:"Cossack Squat", d:30, t:"Ninja Mode: Shift side to side. Keep your heels on the dirt."},
-            {n:"Hip Flexor (L)", d:15, t:"The Glute Squeeze: Squeeze your left butt cheek to open the front."},
-            {n:"Hip Flexor (R)", d:15, t:"The Glute Squeeze: Stay upright. Don't arch your lower back."},
-            {n:"Hamstring (L)", d:15, t:"Hinge: Butt back, chest flat. Feel the pull behind the thigh."},
-            {n:"Hamstring (R)", d:15, t:"Hinge: No hunching! Keep that leg as straight as you can."},
-            {n:"Cossack Hold (L)", d:15, t:"Sink: Sit deep on the left, right toes point to the sky."},
-            {n:"Cossack Hold (R)", d:15, t:"Sink: Find your edge and breathe through the inner thigh heat."}
-        ]},
-        { name: "Ankle", exercises:[
-            {n:"Walk the Dog", d:30, t:"Pedal: Drive those heels down. Wake up the Achilles."},
-            {n:"Squat to Reach", d:30, t:"Full Body: Deep squat, then reach for the stars."},
-            {n:"Calf Rocks", d:30, t:"Pump: Slow ballerina toes, then heavy lead-weight heels."},
-            {n:"Calf Stretch (L)", d:15, t:"Wall Lean: Keep the back leg straight and the heel down."},
-            {n:"Calf Stretch (R)", d:15, t:"Wall Lean: Steady pressure. Feel the belly of the muscle."},
-            {n:"Hamstring (L)", d:15, t:"The Zing: Pull toes toward your shin to feel the nerve stretch."},
-            {n:"Hamstring (R)", d:15, t:"The Zing: Keep your hips square to the front."},
-            {n:"Quad Stretch (L)", d:15, t:"Tuck: Knees together! Don't let the left knee flare out."},
-            {n:"Quad Stretch (R)", d:15, t:"Postured: Stand tall. Don't let your lower back arch away."}
-        ]},
-        { name: "Core", exercises:[
-            {n:"Russian Twists", d:20, t:"Wring it Out: Rotate the ribcage, not just the arms."},
-            {n:"Sit Ups", d:20, t:"No Momentum: Use the abs to peel yourself off the mat."},
-            {n:"Pass the Ball", d:20, t:"Control: Don't let your back pop off the floor as you extend."},
-            {n:"Super Mans", d:20, t:"Flight: Look down at the floor. Squeeze your back corset."},
-            {n:"Dead Bug", d:20, t:"The Grape: Crush that imaginary grape under your lower back."},
-            {n:"Boat Pose", d:20, t:"The Finisher: Shake it out! Keep the chest high and hold on."}
-        ]}
-    ];
+    <!-- =================================== -->
+    <!-- JAVASCRIPT -->
+    <!-- =================================== -->
+    <script>
+        /* =================================== */
+        /* 1. ROUTINE DATA (exercises, durations, tips) */
+        /* =================================== */
+        const routine = [
+            { name: "Back", exercises:[
+                {n:"Cat-Cow", d:30, t:"Flow it: Think string of pearls—move one vertebrae at a time."},
+                {n:"Child to Sphinx", d:30, t:"The Melt: Slink forward from a ball into a proud chest opener."},
+                {n:"Thread Needle (L)", d:15, t:"Reach: Reach under like you're grabbing a lost remote."},
+                {n:"Thread Needle (R)", d:15, t:"Reach: Hips square, let the twist happen in your mid-back."},
+                {n:"Pelvic Tilts", d:30, t:"The Tuck: Just tilt the bowl of your pelvis; keep the legs quiet."},
+                {n:"Tug Knee (L)", d:15, t:"Hug: Pull your knee toward your armpit to reset the lower back."},
+                {n:"Tug Knee (R)", d:15, t:"Hug: Gentle decompression. Feel the hip crease compress."},
+                {n:"Crossover Twist (L)", d:15, t:"Pin it: Keep the opposite shoulder glued to the floor."},
+                {n:"Crossover Twist (R)", d:15, t:"Spiral: Breathe into your ribs; feel the side-body release."}
+            ]},
+            { name: "Hips", exercises:[
+                {n:"Walking Lunge", d:30, t:"Tall Spine: Don't lean! Feel the back hip unzip as you step."},
+                {n:"Cossack Squat", d:30, t:"Ninja Mode: Shift side to side. Keep your heels on the dirt."},
+                {n:"Hip Flexor (L)", d:15, t:"The Glute Squeeze: Squeeze your left butt cheek to open the front."},
+                {n:"Hip Flexor (R)", d:15, t:"The Glute Squeeze: Stay upright. Don't arch your lower back."},
+                {n:"Hamstring (L)", d:15, t:"Hinge: Butt back, chest flat. Feel the pull behind the thigh."},
+                {n:"Hamstring (R)", d:15, t:"Hinge: No hunching! Keep that leg as straight as you can."},
+                {n:"Cossack Hold (L)", d:15, t:"Sink: Sit deep on the left, right toes point to the sky."},
+                {n:"Cossack Hold (R)", d:15, t:"Sink: Find your edge and breathe through the inner thigh heat."}
+            ]},
+            { name: "Ankle", exercises:[
+                {n:"Walk the Dog", d:30, t:"Pedal: Drive those heels down. Wake up the Achilles."},
+                {n:"Squat to Reach", d:30, t:"Full Body: Deep squat, then reach for the stars."},
+                {n:"Calf Rocks", d:30, t:"Pump: Slow ballerina toes, then heavy lead-weight heels."},
+                {n:"Quad Stretch (L)", d:15, t:"Tuck: Knees together! Don't let the left knee flare out."},
+                {n:"Quad Stretch (R)", d:15, t:"Postured: Stand tall. Don't let your lower back arch away."}
+            ]},
+            { name: "Core", exercises:[
+                {n:"Russian Twists", d:20, t:"Wring it Out: Rotate the ribcage, not just the arms."},
+                {n:"Sit Ups", d:20, t:"No Momentum: Use the abs to peel yourself off the mat."},
+                {n:"Pass the Ball", d:20, t:"Control: Don't let your back pop off the floor as you extend."},
+                {n:"Super Mans", d:20, t:"Flight: Look down at the floor. Squeeze your back corset."},
+                {n:"Dead Bug", d:20, t:"The Grape: Crush that imaginary grape under your lower back."},
+                {n:"Boat Pose", d:20, t:"Shake it out! Keep the chest high and hold on."},
+                {n:"Relax", d:20, t:"Breathe slowly."}
+            ]}
+        ];
 
-    const totalExercises = routine.reduce((sum, cycle) => sum + cycle.exercises.length, 0);
-    let exercisesCompleted = 0;
-    let cC = 0, cE = 0, mode = 'PREP', time = 20, total = 20, interval = null, paused = false, tipSpoken = false;
-    let wakeLock = null;
-    const synth = window.speechSynthesis;
+        /* =================================== */
+        /* 2. CALCULATE TOTAL SESSION TIME */
+        /* Includes:
+           - Initial 20s prep
+           - Every exercise duration
+           - 8s prep between exercises in the same cycle
+           - 16s prep when moving to a new cycle */
+        /* =================================== */
+        let totalSessionTime = 20; // initial prep
+        routine.forEach((cycle, i) => {
+            cycle.exercises.forEach((ex, j) => {
+                totalSessionTime += ex.d;               // exercise time
+                if (j < cycle.exercises.length - 1) {   // prep between exercises in same cycle
+                    totalSessionTime += 8;
+                }
+            });
+            if (i < routine.length - 1) {               // longer prep when starting new cycle
+                totalSessionTime += 16;
+            }
+        });
 
-    // Wake Lock Implementation
-    async function requestWakeLock() {
-        if ('wakeLock' in navigator) {
-            try {
-                wakeLock = await navigator.wakeLock.request('screen');
-                wakeLock.addEventListener('release', () => { console.log('Wake Lock released'); });
-                console.log('Wake Lock active');
-            } catch (err) {
-                console.error(`${err.name}, ${err.message}`);
+        let remainingSessionTime = totalSessionTime;
+
+        /* =================================== */
+        /* 3. STATE VARIABLES */
+        /* =================================== */
+        let cC = 0, cE = 0, mode = 'PREP', time = 20, total = 20, interval = null, paused = false, tipSpoken = false;
+        let wakeLock = null;
+        const synth = window.speechSynthesis;
+
+        /* =================================== */
+        /* 4. WAKE LOCK (keeps screen on during workout) */
+        /* =================================== */
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock active');
+                } catch (err) {
+                    console.error('Wake Lock error:', err);
+                }
             }
         }
-    }
 
-    // Re-acquire lock when app returns to focus
-    document.addEventListener('visibilitychange', async () => {
-        if (wakeLock !== null && document.visibilityState === 'visible') {
-            await requestWakeLock();
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                await requestWakeLock();
+            }
+        });
+
+        /* =================================== */
+        /* 5. SPEECH SYNTHESIS HELPER */
+        /* =================================== */
+        function speak(text) {
+            return new Promise(resolve => {
+                if (!text) { resolve(); return; }
+                synth.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.onend = resolve;
+                synth.speak(utterance);
+            });
         }
-    });
 
-    function speak(t) { 
-        return new Promise((resolve) => {
-            if(!t) { resolve(); return; }
-            synth.cancel(); 
-            const m = new SpeechSynthesisUtterance(t); 
-            m.rate = 1.0; 
-            m.onend = () => resolve();
-            synth.speak(m); 
-        });
-    }
+        /* =================================== */
+        /* 6. GEMINI AI ADVICE (optional motivational quote) */
+        /* =================================== */
+        async function fetchAiAdvice() {
+            const key = localStorage.getItem('GEMINI_KEY');
+            if (!key) return "Focus on deep, fluid movement today.";
 
-    window.onload = () => {
-        const savedKey = localStorage.getItem('GEMINI_KEY');
-        if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
-    };
+            const now = new Date();
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const timeContext = `Today is ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, and the current time is ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
 
-    async function fetchAiAdvice() {
-        const key = localStorage.getItem('GEMINI_KEY');
-        if (!key) return "Focus on deep, fluid movement today.";
-        const now = new Date();
-        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        const timeContext = `Today is ${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, and the current time is ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Context: ${timeContext} Role: Peppy mobility coach. Task: Give 1 sentence of poetic advice for a full body session incorporating day / date / evening / morning etc. like a coach would before class begins. Constraint: 15 words max.` }]}] })
+                });
+                const data = await res.json();
+                return data.candidates[0].content.parts[0].text.trim();
+            } catch (e) {
+                console.error("Gemini API error:", e);
+                return "Let your spine be a liquid ribbon as you start your session.";
+            }
+        }
 
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ 
-                    text: `Context: ${timeContext} Role: Peppy mobility coach. Task: Give 1 sentence of poetic advice for a full body session incorporating day / date / evening / morning etc. like a coach would before class begins. Constraint: 15 words max.` 
-                }]}] })
-            });
-            const data = await res.json();
-            return data.candidates[0].content.parts[0].text;
-        } catch (e) { return "Let your spine be a liquid ribbon as you start your session."; }
-    }
+        /* =================================== */
+        /* 7. UPDATE UI (called every second) */
+        /* =================================== */
+        function updateUI() {
+            const ex = routine[cC].exercises[cE];
+            document.getElementById('time').innerText = time;
+            document.getElementById('ex-title').innerText = ex ? ex.n : "Ready";
+            document.getElementById('phase').innerText = mode;
+            document.getElementById('cycle-label').innerText = `CYCLE ${cC + 1}/4: ${routine[cC].name.toUpperCase()}`;
+            document.getElementById('prog').style.strokeDashoffset = 816 - (816 * (time / total));
 
-    document.getElementById('startBtn').onclick = () => {
-        // Request Wake Lock on user interaction
-        requestWakeLock();
-        
-        synth.speak(new SpeechSynthesisUtterance("")); 
-        
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('timer').style.display = 'flex';
-        
-        speak("Starting " + routine[cC].name + " Cycle").then(() => {
-            fetchAiAdvice().then(a => {
-                const b = document.getElementById('ai-advice-bubble');
-                b.innerText = a; 
-                b.style.display = 'block'; 
-                speak(a);
-            });
-        });
+            // Remaining total time display (MM:SS only)
+            const mins = Math.floor(remainingSessionTime / 60);
+            const secs = remainingSessionTime % 60;
+            document.getElementById('total-time-left').innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
 
-        updateUI();
-        interval = setInterval(() => {
-            if (paused) return;
-            if (time > 0) {
-                time--;
-                if (time <= 3 && time > 0) speak(time);
-                if (mode === 'WORK' && !tipSpoken && time === Math.floor(total/2)) {
-                    if (Math.random() < 0.33) speak(routine[cC].exercises[cE].t);
-                    tipSpoken = true;
+            document.body.className = mode.toLowerCase();
+        }
+
+        /* =================================== */
+        /* 8. MOVE TO NEXT STEP (prep → work → next exercise/cycle) */
+        /* =================================== */
+        function nextStep() {
+            if (mode === 'PREP') {
+                mode = 'WORK';
+                const ex = routine[cC].exercises[cE];
+                time = total = ex.d;
+                tipSpoken = false;
+                speak(ex.n);
+                document.getElementById('ai-advice-bubble').style.display = 'none';
+            } else {
+                cE++;
+                if (cE >= routine[cC].exercises.length) {
+                    cE = 0;
+                    cC++;
                 }
-                updateUI();
-            } else { nextStep(); }
-        }, 1000);
-    };
-
-    function nextStep() {
-        if (mode === 'PREP') {
-            mode = 'WORK'; const ex = routine[cC].exercises[cE];
-            time = total = ex.d; tipSpoken = false; speak(ex.n); 
-            document.getElementById('ai-advice-bubble').style.display = 'none';
-        } else {
-            exercisesCompleted++; 
-            cE++; 
-            let cycleTransition = false;
-            if (cE >= routine[cC].exercises.length) { cE = 0; cC++; cycleTransition = true; }
-            if (cC >= routine.length) { location.reload(); return; }
-            mode = 'PREP'; 
-            time = total = cycleTransition ? 16 : 8; 
-            if (cycleTransition) { speak("Next Cycle: " + routine[cC].name); } else { speak("Next: " + routine[cC].exercises[cE].n); }
+                if (cC >= routine.length) {
+                    clearInterval(interval);
+                    document.getElementById('timer').style.display = 'none';
+                    document.getElementById('complete').style.display = 'flex';
+                    speak("Amazing work. Session complete.");
+                    return;
+                }
+                mode = 'PREP';
+                time = total = (cE === 0) ? 16 : 8;
+                if (cE === 0) {
+                    speak("Next Cycle: " + routine[cC].name);
+                } else {
+                    speak("Next: " + routine[cC].exercises[cE].n);
+                }
+            }
+            updateUI();
         }
-        updateUI();
-    }
 
-    function updateUI() {
-        const ex = routine[cC].exercises[cE];
-        document.getElementById('time').innerText = time;
-        document.getElementById('ex-title').innerText = ex.n;
-        document.getElementById('phase').innerText = mode;
-        document.getElementById('cycle-label').innerText = `CYCLE ${cC + 1}/4: ${routine[cC].name.toUpperCase()}`;
-        document.getElementById('prog').style.strokeDashoffset = 816 - (816 * (time / total));
-        const progressPercent = (exercisesCompleted / totalExercises) * 100;
-        document.getElementById('progress-fill').style.width = progressPercent + '%';
-        document.body.className = mode.toLowerCase();
-    }
+        /* =================================== */
+        /* 9. SETTINGS MODAL TOGGLE & SAVE */
+        /* =================================== */
+        function toggleSettings() {
+            const m = document.getElementById('api-modal');
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
+        }
 
-    function toggleSettings() {
-        const m = document.getElementById('api-modal');
-        m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
-    }
+        function saveKey() {
+            localStorage.setItem('GEMINI_KEY', document.getElementById('apiKeyInput').value.trim());
+            toggleSettings();
+        }
 
-    function saveKey() {
-        localStorage.setItem('GEMINI_KEY', document.getElementById('apiKeyInput').value.trim());
-        toggleSettings();
-    }
+        /* =================================== */
+        /* 10. DOM READY - INITIAL SETUP & EVENT LISTENERS */
+        /* =================================== */
+        document.addEventListener('DOMContentLoaded', () => {
+            // Restore saved Gemini API key (if any)
+            try {
+                const savedKey = localStorage.getItem('GEMINI_KEY');
+                const input = document.getElementById('apiKeyInput');
+                if (input && savedKey) input.value = savedKey;
+            } catch (e) {
+                console.warn('Could not restore API key');
+            }
 
-    document.getElementById('p_btn').onclick = function() {
-        paused = !paused; this.innerText = paused ? 'Resume' : 'Pause';
-    };
-    document.getElementById('skip_btn').onclick = () => { time = 0; };
-</script>
+            // Start button - begins the workout
+            const startBtn = document.getElementById('startBtn');
+            if (startBtn) {
+                startBtn.onclick = () => {
+                    requestWakeLock();
+                    synth.cancel();
+
+                    document.getElementById('setup').style.display = 'none';
+                    document.getElementById('timer').style.display = 'flex';
+
+                    remainingSessionTime = totalSessionTime;
+                    updateUI();
+
+                    speak("Starting " + routine[cC].name + " Cycle").then(() => {
+                        fetchAiAdvice().then(advice => {
+                            const bubble = document.getElementById('ai-advice-bubble');
+                            bubble.innerText = advice;
+                            bubble.style.display = 'block';
+                            speak(advice);
+                        });
+                    });
+
+                    // Main countdown loop
+                    interval = setInterval(() => {
+                        if (paused) return;
+                        if (time > 0) {
+                            time--;
+                            remainingSessionTime--;
+                            if (time <= 3 && time > 0) speak(time);
+                            if (mode === 'WORK' && !tipSpoken && time === Math.floor(total / 2)) {
+                                if (Math.random() < 0.33) speak(routine[cC].exercises[cE].t);
+                                tipSpoken = true;
+                            }
+                            updateUI();
+                        } else {
+                            nextStep();
+                        }
+                    }, 1000);
+                };
+            }
+
+            // Pause / Resume button
+            document.getElementById('p_btn').onclick = function() {
+                paused = !paused;
+                this.innerText = paused ? 'Resume' : 'Pause';
+            };
+
+            // Skip current phase
+            document.getElementById('skip_btn').onclick = () => {
+                remainingSessionTime -= time;
+                time = 0;
+            };
+        });
+    </script>
 </body>
 </html>
