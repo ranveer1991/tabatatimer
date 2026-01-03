@@ -246,21 +246,21 @@
         /* =================================== */
         /* 2. CALCULATE TOTAL SESSION TIME */
         /* Includes:
-           - Initial 15s prep
+           - Initial 10s prep
            - Every exercise duration
-           - 8s prep between exercises in the same cycle
-           - 10s prep when moving to a new cycle */
+           - 6s prep between exercises in the same cycle
+           - 8s prep when moving to a new cycle */
         /* =================================== */
-        let totalSessionTime = 15; // initial prep
+        let totalSessionTime = 10; // initial prep
         routine.forEach((cycle, i) => {
             cycle.exercises.forEach((ex, j) => {
                 totalSessionTime += ex.d;               // exercise time
                 if (j < cycle.exercises.length - 1) {   // prep between exercises in same cycle
-                    totalSessionTime += 8;
+                    totalSessionTime += 6;
                 }
             });
             if (i < routine.length - 1) {               // longer prep when starting new cycle
-                totalSessionTime += 10;
+                totalSessionTime += 8;
             }
         });
 
@@ -377,7 +377,7 @@
                     return;
                 }
                 mode = 'PREP';
-                time = total = (cE === 0) ? 15 : 10;
+                time = total = (cE === 0) ? 10 : 8;
                 if (cE === 0) {
                     speak("Next Cycle: " + routine[cC].name);
                 } else {
