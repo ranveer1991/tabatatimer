@@ -269,7 +269,7 @@
         /* =================================== */
         /* 3. STATE VARIABLES */
         /* =================================== */
-        let cC = 0, cE = 0, mode = 'PREP', time = 15, total = 15, interval = null, paused = false, tipSpoken = false;
+        let cC = 0, cE = 0, mode = 'PREP', time = 10, total = 15, interval = null, paused = false, tipSpoken = false;
         let wakeLock = null;
         const synth = window.speechSynthesis;
 
@@ -377,7 +377,7 @@
                     return;
                 }
                 mode = 'PREP';
-                time = total = (cE === 0) ? 10 : 8;
+                time = total = (cE === 0) ? 8 : 6;
                 if (cE === 0) {
                     speak("Next Cycle: " + routine[cC].name);
                 } else {
